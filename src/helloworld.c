@@ -58,6 +58,8 @@ void bruteforce(result_container *container)
     container->preimage_len = 32;
     container->get_prefix = &get_prefix;
 
+    result_tree tree = container_create_trees(container, 1)[0];
+
     secp256k1_scalar ONE;
     secp256k1_scalar_set_int(&ONE, 1);
 
@@ -71,7 +73,7 @@ void bruteforce(result_container *container)
     int last_print = 0;
     double starttime = omp_get_wtime();
     # pragma omp parallel for
-    for (int i = 0; i < container->results_num; i++) {
+    for (int i = 0; i < 4; i++) {
         int this_thread = omp_get_thread_num();
         hash_result *res = container->results[i];
         unsigned char *prefix = res->prefix;
@@ -88,25 +90,13 @@ void bruteforce(result_container *container)
 
         printf("Starting thread %d\n", this_thread);
 
-        for (unsigned long i = 0; ; i++) {
+        for (unsigned long i = 0; found_num < container->results_num; i++) {
             secp256k1_ge_set_gej_var(&r, &point);
             secp256k1_fe_get_b32(pubkey, &(r.x));
             secp256k1_scalar_get_b32(privkey, &d);
 
-            unsigned char* prefix_b = container->get_prefix(pubkey);
-            int eq = 1;
-            for (int i = 0; i < container->prefix_len; i++) {
-                eq = (prefix[i] == prefix_b[i]);
-                if (eq == 0) break;
-            }
-
-            if (eq) {
+            if (container_tree_test_hash(&tree, pubkey, privkey) != NULL) {
                 found_num++;
-                res->hash = (unsigned char*) malloc(container->hash_len * sizeof(unsigned char));
-                memcpy(res->hash, pubkey, container->hash_len);
-                res->preimage = (unsigned char*) malloc(container->preimage_len * sizeof(unsigned char));
-                memcpy(res->preimage, privkey, container->preimage_len);
-                break;
             }
 
             secp256k1_gej_add_ge(&point, &point, &secp256k1_ge_const_g);
