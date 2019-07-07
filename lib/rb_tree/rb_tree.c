@@ -36,7 +36,7 @@
 
 struct rb_node *
 rb_node_alloc () {
-    return malloc(sizeof(struct rb_node));
+    return (rb_node*) malloc(sizeof(struct rb_node));
 }
 
 struct rb_node *
@@ -109,7 +109,7 @@ rb_tree_node_dealloc_cb (struct rb_tree *self, struct rb_node *node) {
 
 struct rb_tree *
 rb_tree_alloc () {
-    return malloc(sizeof(struct rb_tree));
+    return (rb_tree*) malloc(sizeof(struct rb_tree));
 }
 
 struct rb_tree *
@@ -416,7 +416,7 @@ rb_tree_size (struct rb_tree *self) {
 
 struct rb_iter *
 rb_iter_alloc () {
-    return malloc(sizeof(struct rb_iter));
+    return (rb_iter*) malloc(sizeof(struct rb_iter));
 }
 
 struct rb_iter *
