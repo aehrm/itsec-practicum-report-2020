@@ -9,6 +9,7 @@ typedef unsigned int uint128_t __attribute__((mode(TI)));
 #include <execinfo.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <bsd/stdlib.h>
 #include <unistd.h>
 #include <math.h>
 
@@ -56,8 +57,6 @@ void bruteforce(result_container *container)
     container->hash_len = 32;
     container->preimage_len = 32;
     container->get_prefix = &get_prefix;
-    int n_portions = 4;
-    result_tree *portions = container_create_trees(container, n_portions);
 
     secp256k1_scalar ONE;
     secp256k1_scalar_set_int(&ONE, 1);
@@ -67,58 +66,56 @@ void bruteforce(result_container *container)
 
     unsigned long expected = container->results_num * (((unsigned long) 1) << (container->prefix_len * 8));
 
-    srand(time(NULL));
-    secp256k1_scalar startkey;
-    for (j = 0; j < 32; j++) b32[j] = rand() & 0xFF;
-    secp256k1_scalar_set_b32(&startkey, b32, NULL);
-    
-    secp256k1_gej startpoint;
-    secp256k1_ecmult_const(&startpoint, &secp256k1_ge_const_g, &startkey, 256);
-
-
     int found_num = 0;
     int progress = 0;
     int last_print = 0;
     double starttime = omp_get_wtime();
-    /*# pragma omp parallel for */
-    for (int i = 0; i < n_portions; i++) {
+    # pragma omp parallel for
+    for (int i = 0; i < container->results_num; i++) {
         int this_thread = omp_get_thread_num();
-        result_tree portion = portions[i];
+        hash_result *res = container->results[i];
+        unsigned char *prefix = res->prefix;
 
-        secp256k1_scalar keyoffset;
-        secp256k1_scalar_set_int(&keyoffset, n_portions);
-
-        secp256k1_gej offset;
-        secp256k1_ecmult_const(&offset, &secp256k1_ge_const_g, &keyoffset, 256);
-
-        secp256k1_scalar d = startkey;
-        secp256k1_gej point = startpoint;
-        for (j = 1; j < i; j++) {
-            secp256k1_gej_add_ge(&point, &point, &secp256k1_ge_const_g);
-            secp256k1_scalar_add(&d, &d, &ONE);
-        }
-
+        secp256k1_scalar d;
+        arc4random_buf(b32, sizeof b32);
+        secp256k1_scalar_set_b32(&d, b32, NULL);
+        
+        secp256k1_gej point;
+        secp256k1_ecmult_const(&point, &secp256k1_ge_const_g, &d, 256);
 
         secp256k1_ge r;
         unsigned char privkey[32], pubkey[32];
 
-        printf("Starting thread %d with portion size %d\n", this_thread, container_tree_remaining(&portion));
+        printf("Starting thread %d\n", this_thread);
 
-        for (unsigned long i = 0; container_tree_remaining(&portion) > 0; i++) {
+        for (unsigned long i = 0; ; i++) {
             secp256k1_ge_set_gej_var(&r, &point);
             secp256k1_fe_get_b32(pubkey, &(r.x));
             secp256k1_scalar_get_b32(privkey, &d);
 
-            hash_result *found = container_tree_test_hash(&portion, pubkey, privkey);
-            if (found != NULL) found_num++;
+            unsigned char* prefix_b = container->get_prefix(pubkey);
+            int eq = 1;
+            for (int i = 0; i < container->prefix_len; i++) {
+                eq = (prefix[i] == prefix_b[i]);
+                if (eq == 0) break;
+            }
 
-            secp256k1_gej_add_var(&point, &point, &offset, NULL);
-            secp256k1_scalar_add(&d, &d, &keyoffset);
+            if (eq) {
+                found_num++;
+                res->hash = (unsigned char*) malloc(container->hash_len * sizeof(unsigned char));
+                memcpy(res->hash, pubkey, container->hash_len);
+                res->preimage = (unsigned char*) malloc(container->preimage_len * sizeof(unsigned char));
+                memcpy(res->preimage, privkey, container->preimage_len);
+                break;
+            }
+
+            secp256k1_gej_add_ge(&point, &point, &secp256k1_ge_const_g);
+            secp256k1_scalar_add(&d, &d, &ONE);
 
             #pragma omp atomic
             progress += 1;
 
-            if (this_thread == 0 && i>0 && i % 1000 == 0) {
+            if (i>0 && i % 1000 == 0) {
                 double now = omp_get_wtime();
                 if (now - last_print > 1) {
                     float z = (now - starttime);
