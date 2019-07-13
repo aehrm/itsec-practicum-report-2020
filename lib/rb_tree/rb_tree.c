@@ -202,14 +202,14 @@ rb_tree_test (struct rb_tree *self, struct rb_node *root) {
 }
 
 void *
-rb_tree_find(struct rb_tree *self, void *value) {
+rb_tree_find(struct rb_tree *self, void *value, rb_tree_node_cmp_f cmp_f) {
     void *result = NULL;
     if (self) {
         struct rb_node node = { .value = value };
         struct rb_node *it = self->root;
         int cmp = 0;
         while (it) {
-            if ((cmp = self->cmp(self, it, &node))) {
+            if ((cmp = cmp_f(self, it, &node))) {
 
                 // If the tree supports duplicates, they should be
                 // chained to the right subtree for this to work

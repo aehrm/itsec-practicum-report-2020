@@ -20,6 +20,7 @@ typedef unsigned int uint128_t __attribute__((mode(TI)));
 #define USE_FIELD_INV_NUM
 #define USE_SCALAR_4X64
 #define USE_SCALAR_INV_NUM
+#define USE_ASM_X86_64
 #define ECMULT_WINDOW_SIZE 24
 #include "secp256k1.h"
 #include "num.h"
@@ -72,11 +73,9 @@ void bruteforce(result_container *container)
     int progress = 0;
     int last_print = 0;
     double starttime = omp_get_wtime();
-    # pragma omp parallel for
-    for (int i = 0; i < 4; i++) {
+    # pragma omp parallel
+    {
         int this_thread = omp_get_thread_num();
-        hash_result *res = container->results[i];
-        unsigned char *prefix = res->prefix;
 
         secp256k1_scalar d;
         arc4random_buf(b32, sizeof b32);
@@ -98,11 +97,12 @@ void bruteforce(result_container *container)
             if (container_tree_test_hash(&tree, pubkey, privkey) != NULL) {
                 found_num++;
             }
-
-            secp256k1_gej_add_ge(&point, &point, &secp256k1_ge_const_g);
+            
+            secp256k1_gej_add_ge_var(&point, &point, &secp256k1_ge_const_g, NULL);
             secp256k1_scalar_add(&d, &d, &ONE);
 
-            #pragma omp atomic
+
+            /*#pragma omp atomic*/
             progress += 1;
 
             if (i>0 && i % 1000 == 0) {

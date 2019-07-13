@@ -7,7 +7,6 @@ struct result_container;
 
 struct hash_result {
     unsigned char *prefix;
-    unsigned char prefix_len;
     unsigned char *hash;
     unsigned char *preimage;
 

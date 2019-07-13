@@ -1,13 +1,28 @@
 #include <string.h>
 #include "hash_result.h"
 
-int hash_result_rb_cmp(rb_tree *tree, rb_node *node_a, rb_node *node_b) {
-    unsigned char *prefix_a = ((hash_result*) node_a->value)->prefix;
-    unsigned char *prefix_b = ((hash_result*) node_b->value)->prefix;
-    result_container *container = ((hash_result*) node_a->value)->container;
+int hash_result_rb_insert_cmp(rb_tree *tree, rb_node *node_a, rb_node *node_b) {
+    hash_result *result_a = (hash_result*) node_a->value;
+    hash_result *result_b = (hash_result*) node_b->value;
+    result_container *container = result_a->container;
+
+    if (result_a == result_b) return 0;
 
     for (int i = 0; i < container->prefix_len; i++) {
-        int ret = (prefix_a[i] > prefix_b[i]) - (prefix_a[i] < prefix_b[i]);
+        int ret = (result_a->prefix[i] > result_b->prefix[i]) - (result_a->prefix[i] < result_b->prefix[i]);
+        if (ret != 0) return ret;
+    }
+
+    return 1;
+}
+
+int hash_result_rb_test_cmp(rb_tree *tree, rb_node *node_a, rb_node *node_b) {
+    hash_result *result_a = (hash_result*) node_a->value;
+    hash_result *result_b = (hash_result*) node_b->value;
+    result_container *container = result_a->container;
+
+    for (int i = 0; i < container->prefix_len; i++) {
+        int ret = (result_a->prefix[i] > result_b->prefix[i]) - (result_a->prefix[i] < result_b->prefix[i]);
         if (ret != 0) return ret;
     }
 
@@ -37,7 +52,7 @@ hash_result* container_tree_test_hash(result_tree *tree, unsigned char *hash, un
     hash_result search_obj = { .prefix = prefix, .container = tree->container };
 
     // find matching node
-    hash_result *node = (hash_result*) rb_tree_find(tree->rb_tree, &search_obj);
+    hash_result *node = (hash_result*) rb_tree_find(tree->rb_tree, &search_obj, &hash_result_rb_test_cmp);
 
     if (node == NULL) {
         return NULL;
@@ -62,7 +77,7 @@ result_tree* container_create_trees(result_container *container, int n)
     result_tree* trees = (result_tree*) malloc(n * sizeof(result_tree));
     int split_index = 0;
     for (int i = 0; i < n; i++) {
-        rb_tree* tree = rb_tree_create(&hash_result_rb_cmp);
+        rb_tree* tree = rb_tree_create(&hash_result_rb_insert_cmp);
         int portion_num = (container->results_num - split_index) / (n - i);
 
         for (int j = split_index; j < split_index + portion_num; j++) {

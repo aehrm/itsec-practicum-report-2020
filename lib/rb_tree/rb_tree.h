@@ -81,7 +81,7 @@ struct rb_tree *rb_tree_alloc           ();
 struct rb_tree *rb_tree_create          (rb_tree_node_cmp_f cmp);
 struct rb_tree *rb_tree_init            (struct rb_tree *self, rb_tree_node_cmp_f cmp);
 void            rb_tree_dealloc         (struct rb_tree *self, rb_tree_node_f node_cb);
-void           *rb_tree_find            (struct rb_tree *self, void *value);
+void           *rb_tree_find            (struct rb_tree *self, void *value, rb_tree_node_cmp_f cmp_f);
 int             rb_tree_insert          (struct rb_tree *self, void *value);
 int             rb_tree_remove          (struct rb_tree *self, void *value);
 size_t          rb_tree_size            (struct rb_tree *self);
