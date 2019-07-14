@@ -91,24 +91,23 @@ int hash_engine_run(hash_engine *engine)
 
         result_element search_el;
         search_el.prefix_bits = engine->method->max_prefix_bits;
-        search_el.prefix = (unsigned char*) malloc(engine->method->max_prefix_bits/8 * sizeof(unsigned char));
-        hash_context hash_ctx;
-        engine->method->hash_context_alloc(&hash_ctx);
+        search_el.prefix = (unsigned char*) malloc(ceil((double) search_el.prefix_bits/8 * sizeof(unsigned char)));
+        hash_context *hash_ctx = engine->method->hash_context_alloc();
         // TODO add "target suggestion" for Sward-keys
-        engine->method->hash_context_rekey(&hash_ctx);
+        engine->method->hash_context_rekey(hash_ctx);
 
         for (int i = 0; rb_tree_size(engine->rb_tree) > 0; i++) {
-            engine->method->hash_context_get_prefix(&hash_ctx, engine->method->max_prefix_bits/8, search_el.prefix);
+            engine->method->hash_context_get_prefix(hash_ctx, engine->method->max_prefix_bits, search_el.prefix);
             result_element *node = (result_element*) rb_tree_find(engine->rb_tree, &search_el, &result_el_rb_test_cmp);
 
             if (node != NULL) {
-                engine->method->serialize_result(&hash_ctx, &(node->hash_str), &(node->preimage_str));
-                engine->method->hash_context_rekey(&hash_ctx);
+                engine->method->serialize_result(hash_ctx, &(node->hash_str), &(node->preimage_str));
+                engine->method->hash_context_rekey(hash_ctx);
                 rb_tree_remove(engine->rb_tree, node);
             }
 
             progress++;
-            if (engine->method->hash_context_next_result(&hash_ctx) == 0) {
+            if (engine->method->hash_context_next_result(hash_ctx) == 0) {
                 break; // TODO notify threads
             }
             

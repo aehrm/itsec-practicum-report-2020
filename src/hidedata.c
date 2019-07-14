@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
     unsigned char data[100] = "Lorem ipsum dolor sit amet";
     hash_engine engine;
-    hash_engine_init(&engine, &hash_method_p2pk, data, strlen((const char*) data)*8, 24);
+    hash_engine_init(&engine, &hash_method_p2pkh, data, strlen((const char*) data)*8, 20);
     hash_engine_run(&engine);
 
     printf("\n");
