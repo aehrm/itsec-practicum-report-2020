@@ -11,12 +11,17 @@ struct p2pk_hash_ctx {
 };
 
 
-hash_context* p2pk_ctx_alloc()
+int p2pk_max_bits(void *params)
 {
-    return malloc(sizeof (struct p2pk_hash_ctx));
+    return 256;
 }
 
-void p2pk_ctx_rekey(hash_context *ctx)
+hash_context* p2pk_ctx_alloc(void *params)
+{
+    return (hash_context*) malloc(sizeof (struct p2pk_hash_ctx));
+}
+
+void p2pk_ctx_rekey(void *params, hash_context *ctx)
 {
     secp256k1_scalar *privkey = &(((p2pk_hash_ctx*) ctx)->privkey);
     secp256k1_ge *pubkey = &(((p2pk_hash_ctx*) ctx)->pubkey);
@@ -30,7 +35,7 @@ void p2pk_ctx_rekey(hash_context *ctx)
     secp256k1_ge_set_gej_var(pubkey, &point);
 }
 
-int p2pk_ctx_next(hash_context *ctx)
+int p2pk_ctx_next(void *params, hash_context *ctx)
 {
     secp256k1_scalar *privkey = &(((p2pk_hash_ctx*) ctx)->privkey);
     secp256k1_ge *pubkey = &(((p2pk_hash_ctx*) ctx)->pubkey);
@@ -49,7 +54,7 @@ int p2pk_ctx_next(hash_context *ctx)
     return 1;
 }
 
-void p2pk_serialize_result(hash_context *ctx, char **hash_serialized, char **preimage_serialized)
+void p2pk_serialize_result(void *params, hash_context *ctx, char **hash_serialized, char **preimage_serialized)
 {
     secp256k1_scalar *privkey = &(((p2pk_hash_ctx*) ctx)->privkey);
     secp256k1_ge *pubkey = &(((p2pk_hash_ctx*) ctx)->pubkey);
@@ -83,7 +88,7 @@ void p2pk_serialize_result(hash_context *ctx, char **hash_serialized, char **pre
 }
 
 
-void p2pk_ctx_prefix(hash_context *ctx, int prefix_bits, unsigned char *prefix)
+void p2pk_ctx_prefix(void *params, hash_context *ctx, int prefix_bits, unsigned char *prefix)
 {
     secp256k1_ge *pubkey = &(((p2pk_hash_ctx*) ctx)->pubkey);
     unsigned char pubkey_bytes[32];
@@ -93,12 +98,15 @@ void p2pk_ctx_prefix(hash_context *ctx, int prefix_bits, unsigned char *prefix)
 }
 
 
-hash_method hash_method_p2pk = {
-    .max_prefix_bits = 256,
-    .hash_context_alloc = &p2pk_ctx_alloc,
-    .hash_context_rekey = &p2pk_ctx_rekey,
-    .hash_context_next_result = &p2pk_ctx_next,
-    .hash_context_get_prefix = &p2pk_ctx_prefix,
-    .serialize_result = &p2pk_serialize_result,
-};
+hash_method* hash_method_p2pk()
+{
+    hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
+    meth->max_prefix_bits = &p2pk_max_bits;
+    meth->hash_context_alloc = &p2pk_ctx_alloc;
+    meth->hash_context_rekey = &p2pk_ctx_rekey;
+    meth->hash_context_next_result = &p2pk_ctx_next;
+    meth->hash_context_get_prefix = &p2pk_ctx_prefix;
+    meth->serialize_result = &p2pk_serialize_result;
 
+    return (hash_method*) meth;
+};

@@ -69,52 +69,75 @@ void hash_engine_init(hash_engine *engine, hash_method *method, unsigned char *d
     }
 }
 
-void print_statusline(hash_engine *engine, int progress, double starttime, int expected)
+void print_statusline(hash_engine *engine, int progress, double starttime, int median)
 {
     double delta = omp_get_wtime() - starttime;
-    printf("\r[%.2fMkeys/sec] [%.2f%% trials relative to mean] [%d/%d found]", progress/delta/1000000, (float) progress/expected*100, engine->results_num - rb_tree_size(engine->rb_tree), engine->results_num);
-    fflush (stdout);
+    double rate = (double) progress/delta;
+
+    double remtime = (median - progress)/rate;
+    char *remunit = "s";
+    if (remtime > 60) {
+        remtime /= 60;
+        remunit = "min";
+        if (remtime > 60) {
+            remtime /= 60;
+            remunit = "h";
+            if (remtime > 24) {
+                remtime /= 24;
+                remunit = "d";
+            }
+        }
+    }
+
+
+
+    fprintf(stderr, "\r[%.2fMkeys/sec] [%.2f%s until median] [%d/%d found]", rate/1000000, remtime, remunit, engine->results_num - rb_tree_size(engine->rb_tree), engine->results_num);
+    fflush(stderr);
 
 }
 
 int hash_engine_run(hash_engine *engine)
 {
-    unsigned long expected = 0;
-    for (int i = 0; i < engine->results_num; i++) expected += (((unsigned long) 1) << (engine->results[i].prefix_bits));
+    unsigned long median = 0;
+    for (int i = 0; i < engine->results_num; i++) {
+        int bits = engine->results[i].prefix_bits;
+        unsigned long pow = (((unsigned long) 1) << bits);
+        median += log(2) / (log(pow)-log(pow-1));
+    }
 
     int progress = 0;
     double last_print = 0;
     double starttime = omp_get_wtime();
     # pragma omp parallel
     {
-        printf("Starting thread %d\n", omp_get_thread_num());
+        fprintf(stderr, "Starting thread %d\n", omp_get_thread_num());
 
         result_element search_el;
-        search_el.prefix_bits = engine->method->max_prefix_bits;
+        search_el.prefix_bits = hash_method_max_prefix_bits(engine->method);
         search_el.prefix = (unsigned char*) malloc(ceil((double) search_el.prefix_bits/8 * sizeof(unsigned char)));
-        hash_context *hash_ctx = engine->method->hash_context_alloc();
+        hash_context *hash_ctx = hash_context_alloc(engine->method);
         // TODO add "target suggestion" for Sward-keys
-        engine->method->hash_context_rekey(hash_ctx);
+        hash_context_rekey(engine->method, hash_ctx);
 
         for (int i = 0; rb_tree_size(engine->rb_tree) > 0; i++) {
-            engine->method->hash_context_get_prefix(hash_ctx, engine->method->max_prefix_bits, search_el.prefix);
+            hash_context_get_prefix(engine->method, hash_ctx, search_el.prefix_bits, search_el.prefix);
             result_element *node = (result_element*) rb_tree_find(engine->rb_tree, &search_el, &result_el_rb_test_cmp);
 
             if (node != NULL) {
-                engine->method->serialize_result(hash_ctx, &(node->hash_str), &(node->preimage_str));
-                engine->method->hash_context_rekey(hash_ctx);
+                serialize_result(engine->method, hash_ctx, &(node->hash_str), &(node->preimage_str));
+                hash_context_rekey(engine->method, hash_ctx);
                 rb_tree_remove(engine->rb_tree, node);
             }
 
             progress++;
-            if (engine->method->hash_context_next_result(hash_ctx) == 0) {
+            if (hash_context_next_result(engine->method, hash_ctx) == 0) {
                 break; // TODO notify threads
             }
             
             if (i>0 && i % 1000 == 0) {
                 double now = omp_get_wtime();
                 if (now - last_print > 1) {
-                    print_statusline(engine, progress, starttime, expected);
+                    print_statusline(engine, progress, starttime, median);
                     last_print = now;
                 }
             }
