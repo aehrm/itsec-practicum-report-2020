@@ -52,16 +52,28 @@ unsigned char* read_file(FILE *f, int *size)
     return result;
 }
 
-void usage()
+void usage(const char *name)
 {
-    fprintf(stderr, "Usage:\n");
+    fprintf(stderr,
+"Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-f <file>|-] [-i <data>]\n"
+"\n"
+"Parameter:\n"
+"-s <strategy>          Use specified Strategy to hide supplied data. One of \"p2pk\", \"p2pkh\",\n"
+"                       \"p2sh\".\n"
+"-X <strategy-option>   Supply additional options to specified strategy. Option string is in the\n"
+"                       form <key>=<value>. Strategy \"p2sh\" is the only one accepting options,\n"
+"                       and requires a 33-byte or 65-byte long public key via -Xpubkey=<hexstr>.\n"
+"-n <prefix-length>     Use prefixes of specified bitlength.\n"
+"-i <data>              Hide following data, interpreted literal.\n"
+"-f <file>|-            Read data to hide from file. If \"-\" was specified, data is read from\n"
+"                       standard input.\n", name);
 }
 
 int main(int argc, char *argv[])
 {
     /*signal(SIGSEGV, handler);*/
 
-    char *strategy = "";
+    char *strategy = NULL;
     char *strategy_options[20] = {NULL};
     int strategy_options_num = 0;
     FILE *infile = NULL;
@@ -70,7 +82,7 @@ int main(int argc, char *argv[])
 
 
     int opt;
-    while ((opt = getopt(argc, argv, ":s:X:i:f:n:")) != -1) {
+    while ((opt = getopt(argc, argv, ":h?:s:X:i:f:n:")) != -1) {
         switch (opt) {
             case 's':
                 strategy = optarg;
@@ -100,7 +112,7 @@ int main(int argc, char *argv[])
                 bits = atoi(optarg);
                 break;
             default:
-                usage();
+                usage(argv[0]);
                 return 1;
         }
     }
@@ -111,6 +123,7 @@ int main(int argc, char *argv[])
     }
     if (infile == NULL && instr == NULL) {
         fprintf(stderr, "One of -i <str> or -f <file> must be specified.\n");
+        usage(argv[0]);
         return 1;
     }
 
