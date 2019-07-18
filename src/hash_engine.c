@@ -69,10 +69,10 @@ void hash_engine_init(hash_engine *engine, hash_method *method, unsigned char *d
     }
 }
 
-void print_statusline(hash_engine *engine, int progress, double starttime, int median)
+void print_statusline(hash_engine *engine, double starttime, unsigned long median, unsigned long progress, double last_print, unsigned long last_progress)
 {
-    double delta = omp_get_wtime() - starttime;
-    double rate = (double) progress/delta;
+    double delta = omp_get_wtime() - last_print;
+    double rate = (double) (progress - last_progress)/delta;
 
     double remtime = (median - progress)/rate;
     char *remunit = "s";
@@ -91,7 +91,7 @@ void print_statusline(hash_engine *engine, int progress, double starttime, int m
 
 
 
-    fprintf(stderr, "\r[%.2fMkeys/sec] [%.2f%s until median] [%d/%d found]", rate/1000000, remtime, remunit, engine->results_num - rb_tree_size(engine->rb_tree), engine->results_num);
+    fprintf(stderr, "\r[%.3fMkeys/sec] [%.2f%s until median] [%d/%d found]", rate/1000000, remtime, remunit, engine->results_num - rb_tree_size(engine->rb_tree), engine->results_num);
     fflush(stderr);
 
 }
@@ -105,7 +105,8 @@ int hash_engine_run(hash_engine *engine)
         median += log(2) / (log(pow)-log(pow-1));
     }
 
-    int progress = 0;
+    unsigned long progress = 0;
+    unsigned long last_progress = 0;
     double last_print = 0;
     double starttime = omp_get_wtime();
     # pragma omp parallel
@@ -137,8 +138,9 @@ int hash_engine_run(hash_engine *engine)
             if (i>0 && i % 1000 == 0) {
                 double now = omp_get_wtime();
                 if (now - last_print > 1) {
-                    print_statusline(engine, progress, starttime, median);
+                    print_statusline(engine, starttime, median, progress, last_print, last_progress);
                     last_print = now;
+                    last_progress = progress;
                 }
             }
         }
