@@ -74,6 +74,16 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long media
     double delta = omp_get_wtime() - last_print;
     double rate = (double) (progress - last_progress)/delta;
 
+    char *remtarget = "median";
+    if (progress > median) {
+        remtarget = "90\% percentile";
+        median = median / (-log(2)) * (log(0.1));
+    }
+    if (progress > median) {
+        remtarget = "99.99\% percentile";
+        median = median / (-log(0.1)) * (log(0.0001));
+    }
+
     double remtime = (median - progress)/rate;
     char *remunit = "s";
     if (remtime > 60) {
@@ -90,8 +100,7 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long media
     }
 
 
-
-    fprintf(stderr, "\r[%.3fMkeys/sec] [%.2f%s until median] [%d/%d found]", rate/1000000, remtime, remunit, engine->results_num - rb_tree_size(engine->rb_tree), engine->results_num);
+    fprintf(stderr, "\r[%.3fMkeys/sec] [%.2f%s until %s] [%d/%d found]", rate/1000000, remtime, remunit, remtarget, engine->results_num - rb_tree_size(engine->rb_tree), engine->results_num);
     fflush(stderr);
 
 }
