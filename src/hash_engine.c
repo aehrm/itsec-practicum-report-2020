@@ -49,6 +49,7 @@ void hash_engine_init(hash_engine *engine, hash_method *method, unsigned char *d
     engine->results = (result_element*) malloc(engine->results_num * sizeof(result_element));
     engine->rb_tree = rb_tree_create(&result_el_rb_insert_cmp);
 
+    fprintf(stderr, "Partition program:\n");
     int split_index = 0;
     for (int i = 0; i < engine->results_num; i++) {
         int portion_bits = (data_bits - split_index) / (engine->results_num - i);
@@ -66,6 +67,12 @@ void hash_engine_init(hash_engine *engine, hash_method *method, unsigned char *d
 
         split_index += portion_bits;
         rb_tree_insert(engine->rb_tree, el);
+
+        fprintf(stderr, "#%d: 0x", i);
+        for (int k = 0; k < ceil((double) portion_bits/8); k++) {
+            fprintf(stderr, "%02x", el->prefix[k]);
+        }
+        printf(", %d bits\n", el->prefix_bits);
     }
 }
 
@@ -81,7 +88,7 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long media
     }
     if (progress > median) {
         remtarget = "99.99\% percentile";
-        median = median / (-log(0.1)) * (log(0.0001));
+        median = median / (log(0.1)) * (log(0.0001));
     }
 
     double remtime = (median - progress)/rate;
@@ -107,6 +114,7 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long media
 
 int hash_engine_run(hash_engine *engine)
 {
+    fprintf(stderr, "Starting engine\n");
     unsigned long median = 0;
     for (int i = 0; i < engine->results_num; i++) {
         int bits = engine->results[i].prefix_bits;
@@ -124,10 +132,10 @@ int hash_engine_run(hash_engine *engine)
 
         result_element search_el;
         search_el.prefix_bits = hash_method_max_prefix_bits(engine->method);
-        search_el.prefix = (unsigned char*) malloc(ceil((double) search_el.prefix_bits/8 * sizeof(unsigned char)));
+        search_el.prefix = (unsigned char*) calloc(ceil((double) search_el.prefix_bits/8), sizeof(unsigned char));
         hash_context *hash_ctx = hash_context_alloc(engine->method);
-        // TODO add "target suggestion" for Sward-keys
         hash_context_rekey(engine->method, hash_ctx);
+        hash_context_next_result(engine->method, hash_ctx);
 
         for (int i = 0; rb_tree_size(engine->rb_tree) > 0; i++) {
             hash_context_get_prefix(engine->method, hash_ctx, search_el.prefix_bits, search_el.prefix);
@@ -140,9 +148,8 @@ int hash_engine_run(hash_engine *engine)
             }
 
             progress++;
-            if (hash_context_next_result(engine->method, hash_ctx) == 0) {
+            if (hash_context_next_result(engine->method, hash_ctx) == 0)
                 break; // TODO notify threads
-            }
             
             if (i>0 && i % 1000 == 0) {
                 double now = omp_get_wtime();
