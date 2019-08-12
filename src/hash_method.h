@@ -8,11 +8,12 @@ hash_method* hash_method_p2pk();
 hash_method* hash_method_p2pkh();
 hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len);
 
+int hash_method_batch_size(hash_method *meth);
 int hash_method_max_prefix_bits(hash_method *meth);
 hash_context* hash_context_alloc(hash_method *meth);
 void hash_context_rekey(hash_method *meth, hash_context *ctx);
 int hash_context_next_result(hash_method *meth, hash_context *ctx);
-void hash_context_get_prefix(hash_method *meth, hash_context *ctx, int prefix_bits, unsigned char *prefix);
-void serialize_result(hash_method *meth, hash_context *res, char **hash_serialized, char **preimage_serialized);
+void hash_context_get_prefixes(hash_method *meth, hash_context *ctx, int prefix_bits, unsigned char **prefix);
+void serialize_result(hash_method *meth, hash_context *res, int index, char **hash_serialized, char **preimage_serialized);
 
 #endif

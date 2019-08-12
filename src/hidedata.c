@@ -71,7 +71,7 @@ void usage(const char *name)
 
 int main(int argc, char *argv[])
 {
-    /*signal(SIGSEGV, handler);*/
+    signal(SIGSEGV, handler);
 
     char *strategy = NULL;
     char *strategy_options[20] = {NULL};
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     if (strcmp(strategy, "p2pk") == 0) {
         method = hash_method_p2pk();
         if (bits == -1) bits = 16;
-    } else if (strcmp(strategy, "p2pkh") == 0) {
+    /*} else if (strcmp(strategy, "p2pkh") == 0) {
         method = hash_method_p2pkh();
         if (bits == -1) bits = 16;
     } else if (strcmp(strategy, "p2sh") == 0) {
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
         }
 
         method = hash_method_p2sh(pubkey, pubkey_len);
-        if (bits == -1) bits = 24;
+        if (bits == -1) bits = 24;*/
     } else {
         fprintf(stderr, "Option -s <strategy> must be specified. Available strategies are \"p2pk\", \"p2pkh\", \"p2sh\".\n");
         return 1;

@@ -81,7 +81,7 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long media
     double delta = omp_get_wtime() - last_print;
     double rate = (double) (progress - last_progress)/delta;
 
-    char *remtarget = "median";
+    char const *remtarget = "median";
     if (progress > median) {
         remtarget = "90\% percentile";
         median = median / (-log(2)) * (log(0.1));
@@ -92,7 +92,7 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long media
     }
 
     double remtime = (median - progress)/rate;
-    char *remunit = "s";
+    char const *remunit = "s";
     if (remtime > 60) {
         remtime /= 60;
         remunit = "min";
@@ -132,32 +132,43 @@ int hash_engine_run(hash_engine *engine)
 
         result_element search_el;
         search_el.prefix_bits = hash_method_max_prefix_bits(engine->method);
-        search_el.prefix = (unsigned char*) calloc(ceil((double) search_el.prefix_bits/8), sizeof(unsigned char));
+        /*search_el.prefix = (unsigned char*) calloc(ceil((double) search_el.prefix_bits/8), sizeof(unsigned char));*/
+
+        int batch_size = hash_method_batch_size(engine->method);
+        int prefix_bytes = (int) ceil((double) search_el.prefix_bits/8);
+        unsigned char *prefix_container = (unsigned char*) calloc(batch_size * prefix_bytes, sizeof(unsigned char));
+        unsigned char *prefixes[batch_size];
+        for (int i = 0; i < batch_size; i++)
+            prefixes[i] = prefix_container + i * prefix_bytes;
+
         hash_context *hash_ctx = hash_context_alloc(engine->method);
         hash_context_rekey(engine->method, hash_ctx);
         hash_context_next_result(engine->method, hash_ctx);
 
-        for (int i = 0; rb_tree_size(engine->rb_tree) > 0; i++) {
-            hash_context_get_prefix(engine->method, hash_ctx, search_el.prefix_bits, search_el.prefix);
-            result_element *node = (result_element*) rb_tree_find(engine->rb_tree, &search_el, &result_el_rb_test_cmp);
+        while (rb_tree_size(engine->rb_tree) > 0) {
+            hash_context_get_prefixes(engine->method, hash_ctx, search_el.prefix_bits, prefixes);
 
-            if (node != NULL) {
-                serialize_result(engine->method, hash_ctx, &(node->hash_str), &(node->preimage_str));
-                hash_context_rekey(engine->method, hash_ctx);
-                rb_tree_remove(engine->rb_tree, node);
+            for (int i = 0; i < batch_size; i++) {
+                search_el.prefix = prefixes[i];
+                result_element *node = (result_element*) rb_tree_find(engine->rb_tree, &search_el, &result_el_rb_test_cmp);
+                progress++;
+
+                if (node != NULL) {
+                    serialize_result(engine->method, hash_ctx, i, &(node->hash_str), &(node->preimage_str));
+                    hash_context_rekey(engine->method, hash_ctx);
+                    rb_tree_remove(engine->rb_tree, node);
+                    break;
+                }
             }
-
-            progress++;
+            
             if (hash_context_next_result(engine->method, hash_ctx) == 0)
                 break; // TODO notify threads
-            
-            if (i>0 && i % 1000 == 0) {
-                double now = omp_get_wtime();
-                if (now - last_print > 1) {
-                    print_statusline(engine, starttime, median, progress, last_print, last_progress);
-                    last_print = now;
-                    last_progress = progress;
-                }
+
+            double now = omp_get_wtime();
+            if (now - last_print > 1) {
+                print_statusline(engine, starttime, median, progress, last_print, last_progress);
+                last_print = now;
+                last_progress = progress;
             }
         }
     }
