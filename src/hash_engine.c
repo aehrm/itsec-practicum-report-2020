@@ -3,7 +3,6 @@
 #define CLEARBIT(A,k)   ( A[((k)/8)] &= ~(1 << ((k)%8)) )
 
 #include "hash_engine.h"
-#include "secp256k1.h"
 #include <math.h>
 #include <sys/param.h>
 #include <omp.h>

@@ -1,115 +1,161 @@
 #include "hash_method.h"
-#include "secp256k1.h"
+#include <openssl/bn.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/bn.h>
+#include <openssl/ec.h>
+#include <openssl/obj_mac.h>
+#include <openssl/ripemd.h>
+#include <openssl/sha.h>
 #include <math.h>
 #include <bsd/stdlib.h>
 #include <unistd.h>
 #include <math.h>
-#include <openssl/ripemd.h>
-#include <openssl/sha.h>
+#include <cstring>
+
+#define BATCH_SIZE 1024
+#define HASH_BYTES 20
 
 struct p2pkh_hash_ctx {
-    secp256k1_scalar privkey;
-    secp256k1_ge pubkey;
-    unsigned char ripemdhash[20];
+    BN_CTX *bn_ctx;
+    EC_POINT *batchinc;
+    EC_KEY *basekey;
+    EC_POINT *points[BATCH_SIZE];
+    unsigned char *ripemdhashes[BATCH_SIZE];
 };
+
 
 int p2pkh_max_bits(void *params)
 {
-    return 160;
+    return HASH_BYTES * 8;
+}
+
+int p2pkh_batch_size(void *params)
+{
+    return BATCH_SIZE;
 }
 
 hash_context* p2pkh_ctx_alloc(void *params)
 {
-    return (hash_context*) malloc(sizeof (struct p2pkh_hash_ctx));
+    BIGNUM *bn_batch_size = BN_new(); BN_set_word(bn_batch_size, BATCH_SIZE);
+    p2pkh_hash_ctx *ctx = (p2pkh_hash_ctx*) malloc(sizeof(struct p2pkh_hash_ctx));
+    ctx->basekey = EC_KEY_new_by_curve_name(NID_secp256k1);
+    ctx->bn_ctx = BN_CTX_new();
+
+    const EC_GROUP *pgroup = EC_KEY_get0_group(ctx->basekey);
+    ctx->batchinc = EC_POINT_new(pgroup);
+    EC_POINT_mul(pgroup, ctx->batchinc, bn_batch_size, NULL, NULL, ctx->bn_ctx);
+
+    for (int i = 0; i < BATCH_SIZE; i++)
+        ctx->points[i] = EC_POINT_new(pgroup);
+
+    unsigned char *hash_container = (unsigned char*) malloc(HASH_BYTES * BATCH_SIZE * sizeof(unsigned char));
+    for (int i = 0; i < BATCH_SIZE; i++)
+        ctx->ripemdhashes[i] = hash_container + HASH_BYTES * i;
+
+    return ctx;
 }
 
 void p2pkh_ctx_rekey(void *params, hash_context *ctx)
 {
-    secp256k1_scalar *privkey = &(((p2pkh_hash_ctx*) ctx)->privkey);
-    secp256k1_ge *pubkey = &(((p2pkh_hash_ctx*) ctx)->pubkey);
+    BN_CTX *bn_ctx = ((p2pkh_hash_ctx*) ctx)->bn_ctx;
+    EC_KEY *basekey = ((p2pkh_hash_ctx*) ctx)->basekey;
+    EC_POINT **points = ((p2pkh_hash_ctx*) ctx)->points;
+    const EC_GROUP *pgroup = EC_KEY_get0_group(basekey);
+    const EC_POINT *pgen = EC_GROUP_get0_generator(pgroup);
+    EC_KEY_generate_key(basekey);
+    EC_POINT_copy(points[0], EC_KEY_get0_public_key(basekey));
 
-    unsigned char nonce[32];
-    arc4random_buf(nonce, 32);
-    secp256k1_scalar_set_b32(privkey, nonce, NULL);
-
-    secp256k1_gej point;
-    secp256k1_ecmult_const(&point, &secp256k1_ge_const_g, privkey, 256);
-    secp256k1_ge_set_gej_var(pubkey, &point);
+    // points[i] = points[i-1] + G
+    for (int i = 1; i < BATCH_SIZE; i++) {
+        EC_POINT_add(pgroup, points[i], points[i-1], pgen, bn_ctx);
+    }
 }
 
 int p2pkh_ctx_next(void *params, hash_context *ctx)
 {
-    secp256k1_scalar *privkey = &(((p2pkh_hash_ctx*) ctx)->privkey);
-    secp256k1_ge *pubkey = &(((p2pkh_hash_ctx*) ctx)->pubkey);
-    unsigned char *hash = ((p2pkh_hash_ctx*) ctx)->ripemdhash;
+    BIGNUM *bn_batch_size = BN_new(); BN_set_word(bn_batch_size, BATCH_SIZE);
+    BN_CTX *bn_ctx = ((p2pkh_hash_ctx*) ctx)->bn_ctx;
+    EC_KEY *basekey = ((p2pkh_hash_ctx*) ctx)->basekey;
+    EC_POINT **points = ((p2pkh_hash_ctx*) ctx)->points;
+    EC_POINT *batchinc = ((p2pkh_hash_ctx*) ctx)->batchinc;
+    unsigned char **hashes = ((p2pkh_hash_ctx*) ctx)->ripemdhashes;
+    const EC_GROUP *pgroup = EC_KEY_get0_group(basekey);
+    const EC_POINT *pgen = EC_GROUP_get0_generator(pgroup);
 
-    secp256k1_scalar ONE;
-    secp256k1_scalar_set_int(&ONE, 1);
+    // add batchinc to basekey
+    BIGNUM *priv = BN_dup(EC_KEY_get0_private_key(basekey));
+    EC_POINT *pub = EC_POINT_dup(EC_KEY_get0_public_key(basekey), pgroup);
+    BN_add(priv, priv, bn_batch_size);
+    EC_POINT_add(pgroup, pub, pub, batchinc, bn_ctx);
+    EC_KEY_set_private_key(basekey, priv);
+    EC_KEY_set_public_key(basekey, pub);
 
-    secp256k1_gej point;
-    secp256k1_gej_set_ge(&point, pubkey);
-    secp256k1_gej_add_ge_var(&point, &point, &secp256k1_ge_const_g, NULL);
+    // add batchinc to points
+    for (int i = 0; i < BATCH_SIZE; i++)
+        EC_POINT_add(pgroup, points[i], points[i], batchinc, bn_ctx);
 
-    // update pubkey/privkey
-    secp256k1_ge_set_gej_var(pubkey, &point);
-    secp256k1_scalar_add(privkey, privkey, &ONE);
+    // make affine
+    EC_POINTs_make_affine(pgroup, BATCH_SIZE, points, bn_ctx);
 
-    // comupte ripemd(sha256(pubkey))
     unsigned char pubkey_serialized[33];
     unsigned char sha256md[32];
-    size_t null;
-    secp256k1_eckey_pubkey_serialize(pubkey, pubkey_serialized, &null, 1);
-    SHA256(pubkey_serialized, 33 * sizeof(unsigned char), sha256md);
-    RIPEMD160(sha256md, 32 * sizeof(unsigned char), hash);
+    // comupte ripemd(sha256(pubkey))
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        EC_POINT_point2oct(pgroup, points[i], POINT_CONVERSION_COMPRESSED, pubkey_serialized, 33 * sizeof(unsigned char), bn_ctx);
+        SHA256(pubkey_serialized, 33 * sizeof(unsigned char), sha256md);
+        RIPEMD160(sha256md, 32 * sizeof(unsigned char), hashes[i]);
+    }
 
     return 1;
 }
 
-void p2pkh_serialize_result(void *params, hash_context *ctx, char **hash_serialized, char **preimage_serialized)
+void p2pkh_serialize_result(void *params, hash_context *ctx, int index, char **hash_serialized, char **preimage_serialized)
 {
-    secp256k1_scalar *privkey = &(((p2pkh_hash_ctx*) ctx)->privkey);
-    unsigned char *hash = ((p2pkh_hash_ctx*) ctx)->ripemdhash;
+    BN_CTX *bn_ctx = ((p2pkh_hash_ctx*) ctx)->bn_ctx;
+    EC_KEY *basekey = ((p2pkh_hash_ctx*) ctx)->basekey;
+    unsigned char *hash = ((p2pkh_hash_ctx*) ctx)->ripemdhashes[index];
     char buffer[2];
 
     // 20 bytes ripemd hash
-    unsigned char pubkey_serialized[20];
-    char *hash_str = (char*) malloc((2*20+1) * sizeof (char));
+    unsigned char pubkey_serialized[HASH_BYTES];
+    char *hash_str = (char*) malloc((2*HASH_BYTES+1) * sizeof (char));
     *hash_serialized = hash_str;
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < HASH_BYTES; i++) {
         sprintf(buffer, "%.2X", hash[i]);
         memcpy(hash_str+2*i, buffer, 2);
     }
-    hash_str[2*20] = '\0';
+    hash_str[2*HASH_BYTES] = '\0';
+
+    // compute private key; priv_basekey + i
+    BIGNUM *priv = BN_dup(EC_KEY_get0_private_key(basekey));
+    BIGNUM *offset = BN_new(); BN_set_word(offset, index);
+    BN_add(priv, priv, offset);
 
     // private key as 256-bit number (TODO use wallet import format)
-    unsigned char privkey_serialized[32];
-    secp256k1_scalar_get_b32(privkey_serialized, privkey);
-    char *preimage_str = (char*) malloc((2*32+1) * sizeof (char));
-    *preimage_serialized = preimage_str;
-
-    for (int i = 0; i < 32; i++) {
-        sprintf(buffer, "%.2X", privkey_serialized[i]);
-        memcpy(preimage_str+2*i, buffer, 2);
-    }
-    preimage_str[2*32] = '\0';
+    *preimage_serialized = BN_bn2hex(priv);
 }
 
 
-void p2pkh_ctx_prefix(void *params, hash_context *ctx, int prefix_bits, unsigned char *prefix)
+void p2pkh_ctx_prefixes(void *params, hash_context *ctx, int prefix_bits, unsigned char **prefixes)
 {
-    unsigned char *hash = ((p2pkh_hash_ctx*) ctx)->ripemdhash;
-    memcpy(prefix, hash, ceil((double) prefix_bits / 8));
+    unsigned char **hashes = ((p2pkh_hash_ctx*) ctx)->ripemdhashes;
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        memcpy(prefixes[i], hashes[i], ceil((double) prefix_bits / 8));
+    }
 }
+
 
 hash_method* hash_method_p2pkh()
 {
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2pkh_max_bits;
+    meth->batch_size = &p2pkh_batch_size;
     meth->hash_context_alloc = &p2pkh_ctx_alloc;
     meth->hash_context_rekey = &p2pkh_ctx_rekey;
     meth->hash_context_next_result = &p2pkh_ctx_next;
-    meth->hash_context_get_prefix = &p2pkh_ctx_prefix;
+    meth->hash_context_get_prefixes = &p2pkh_ctx_prefixes;
     meth->serialize_result = &p2pkh_serialize_result;
 
     return (hash_method*) meth;

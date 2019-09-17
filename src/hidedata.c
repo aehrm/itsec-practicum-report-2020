@@ -141,10 +141,10 @@ int main(int argc, char *argv[])
     if (strcmp(strategy, "p2pk") == 0) {
         method = hash_method_p2pk();
         if (bits == -1) bits = 16;
-    /*} else if (strcmp(strategy, "p2pkh") == 0) {
+    } else if (strcmp(strategy, "p2pkh") == 0) {
         method = hash_method_p2pkh();
         if (bits == -1) bits = 16;
-    } else if (strcmp(strategy, "p2sh") == 0) {
+    /*} else if (strcmp(strategy, "p2sh") == 0) {
         unsigned char* pubkey = NULL;
         int pubkey_len;
         for (int i = 0; i < strategy_options_num; i++) {
