@@ -41,9 +41,8 @@ int result_el_rb_test_cmp(rb_tree *tree, rb_node *node_a, rb_node *node_b) {
     return 0;
 }
 
-void hash_engine_init(hash_engine *engine, hash_method *method, unsigned char *data, int data_bits, int prefix_bits)
+void hash_engine_init(hash_engine *engine, unsigned char *data, int data_bits, int prefix_bits)
 {
-    engine->method = method;
     engine->results_num = ceil((double) data_bits / prefix_bits);
     engine->results = (result_element*) malloc(engine->results_num * sizeof(result_element));
     engine->rb_tree = rb_tree_create(&result_el_rb_insert_cmp);
@@ -75,8 +74,15 @@ void hash_engine_init(hash_engine *engine, hash_method *method, unsigned char *d
     }
 }
 
-void print_statusline(hash_engine *engine, double starttime, unsigned long median, unsigned long progress, double last_print, unsigned long last_progress)
+void print_statusline(hash_engine *engine, double starttime, unsigned long progress, double last_print, unsigned long last_progress)
 {
+    unsigned long median = 0;
+    for (int i = 0; i < engine->results_num; i++) {
+        int bits = engine->results[i].prefix_bits;
+        unsigned long pow = (((unsigned long) 1) << bits);
+        median += log(2) / (log(pow)-log(pow-1));
+    }
+
     double delta = omp_get_wtime() - last_print;
     double rate = (double) (progress - last_progress)/delta;
 
@@ -111,66 +117,12 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long media
 
 }
 
-int hash_engine_run(hash_engine *engine)
+result_element* hash_engine_search(hash_engine *engine, unsigned char *prefix, int prefix_bits)
 {
-    fprintf(stderr, "Starting engine\n");
-    unsigned long median = 0;
-    for (int i = 0; i < engine->results_num; i++) {
-        int bits = engine->results[i].prefix_bits;
-        unsigned long pow = (((unsigned long) 1) << bits);
-        median += log(2) / (log(pow)-log(pow-1));
-    }
+    result_element search_el;
+    search_el.prefix_bits = prefix_bits;
+    search_el.prefix = prefix;
 
-    unsigned long progress = 0;
-    unsigned long last_progress = 0;
-    double last_print = 0;
-    double starttime = omp_get_wtime();
-    # pragma omp parallel
-    {
-        fprintf(stderr, "Starting thread %d\n", omp_get_thread_num());
-
-        result_element search_el;
-        search_el.prefix_bits = hash_method_max_prefix_bits(engine->method);
-        /*search_el.prefix = (unsigned char*) calloc(ceil((double) search_el.prefix_bits/8), sizeof(unsigned char));*/
-
-        int batch_size = hash_method_batch_size(engine->method);
-        int prefix_bytes = (int) ceil((double) search_el.prefix_bits/8);
-        unsigned char *prefix_container = (unsigned char*) calloc(batch_size * prefix_bytes, sizeof(unsigned char));
-        unsigned char *prefixes[batch_size];
-        for (int i = 0; i < batch_size; i++)
-            prefixes[i] = prefix_container + i * prefix_bytes;
-
-        hash_context *hash_ctx = hash_context_alloc(engine->method);
-        hash_context_rekey(engine->method, hash_ctx);
-        hash_context_next_result(engine->method, hash_ctx);
-
-        while (rb_tree_size(engine->rb_tree) > 0) {
-            hash_context_get_prefixes(engine->method, hash_ctx, search_el.prefix_bits, prefixes);
-
-            for (int i = 0; i < batch_size; i++) {
-                search_el.prefix = prefixes[i];
-                result_element *node = (result_element*) rb_tree_find(engine->rb_tree, &search_el, &result_el_rb_test_cmp);
-                progress++;
-
-                if (node != NULL) {
-                    serialize_result(engine->method, hash_ctx, i, &(node->hash_str), &(node->preimage_str));
-                    hash_context_rekey(engine->method, hash_ctx);
-                    rb_tree_remove(engine->rb_tree, node);
-                    break;
-                }
-            }
-            
-            if (hash_context_next_result(engine->method, hash_ctx) == 0)
-                break; // TODO notify threads
-
-            double now = omp_get_wtime();
-            if (now - last_print > 1) {
-                print_statusline(engine, starttime, median, progress, last_print, last_progress);
-                last_print = now;
-                last_progress = progress;
-            }
-        }
-    }
-
-    return 1;
+    return (result_element*) rb_tree_find(engine->rb_tree, &search_el, &result_el_rb_test_cmp);
 }
+

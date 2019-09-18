@@ -69,6 +69,8 @@ void usage(const char *name)
 "                       standard input.\n", name);
 }
 
+int hash_engine_run(hash_engine *engine, hash_method *method);
+
 int main(int argc, char *argv[])
 {
     signal(SIGSEGV, handler);
@@ -180,12 +182,67 @@ int main(int argc, char *argv[])
     }
 
     hash_engine engine;
-    hash_engine_init(&engine, method, data, data_size * 8, bits);
-    hash_engine_run(&engine);
+    hash_engine_init(&engine, data, data_size * 8, bits);
+    hash_engine_run(&engine, method);
 
     fprintf(stderr, "\n");
     for (int i = 0; i < engine.results_num; i++) {
         result_element res = engine.results[i];
         printf("%s %s\n", res.hash_str, res.preimage_str);
     }
+}
+
+
+int hash_engine_run(hash_engine *engine, hash_method *method)
+{
+    fprintf(stderr, "Starting engine\n");
+
+    unsigned long progress = 0;
+    unsigned long last_progress = 0;
+    double last_print = 0;
+    double starttime = omp_get_wtime();
+    # pragma omp parallel
+    {
+        fprintf(stderr, "Starting thread %d\n", omp_get_thread_num());
+
+        int prefix_bits = hash_method_max_prefix_bits(method);
+        int prefix_bytes = (int) ceil((double) prefix_bits/8);
+        int batch_size = hash_method_batch_size(method);
+        unsigned char *prefix_container = (unsigned char*) calloc(batch_size * prefix_bytes, sizeof(unsigned char));
+        unsigned char *prefixes[batch_size];
+        for (int i = 0; i < batch_size; i++)
+            prefixes[i] = prefix_container + i * prefix_bytes;
+
+        hash_context *hash_ctx = hash_context_alloc(method);
+        hash_context_rekey(method, hash_ctx);
+        hash_context_next_result(method, hash_ctx);
+
+        while (rb_tree_size(engine->rb_tree) > 0) {
+            hash_context_get_prefixes(method, hash_ctx, prefix_bits, prefixes);
+
+            for (int i = 0; i < batch_size; i++) {
+                result_element *node = hash_engine_search(engine, prefixes[i], prefix_bits);
+                progress++;
+
+                if (node != NULL) {
+                    serialize_result(method, hash_ctx, i, &(node->hash_str), &(node->preimage_str));
+                    hash_context_rekey(method, hash_ctx);
+                    rb_tree_remove(engine->rb_tree, node);
+                    break;
+                }
+            }
+            
+            if (hash_context_next_result(method, hash_ctx) == 0)
+                break; // TODO notify threads
+
+            double now = omp_get_wtime();
+            if (now - last_print > 1) {
+                print_statusline(engine, starttime, progress, last_print, last_progress);
+                last_print = now;
+                last_progress = progress;
+            }
+        }
+    }
+
+    return 1;
 }
