@@ -158,7 +158,7 @@ hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len)
     params->pubkey = (unsigned char*) malloc(pubkey_len);
     memcpy(params->pubkey, pubkey, pubkey_len);
 
-    meth->params = params; 
+    meth->params = params;
 
     return (hash_method*) meth;
 };

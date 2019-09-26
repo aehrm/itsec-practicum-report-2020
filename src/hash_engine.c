@@ -1,11 +1,8 @@
-#define TESTBIT(A,k)    ( A[((k)/8)] &  (1 <<  ((k)%8)) )
-#define SETBIT(A,k)     ( A[((k)/8)] |= (1 <<  ((k)%8)) )
-#define CLEARBIT(A,k)   ( A[((k)/8)] &= ~(1 << ((k)%8)) )
-
 #include "hash_engine.h"
 #include <math.h>
 #include <sys/param.h>
 #include <omp.h>
+#include <time.h>
 
 int result_el_rb_insert_cmp(rb_tree *tree, rb_node *node_a, rb_node *node_b) {
     int ret;
@@ -13,7 +10,7 @@ int result_el_rb_insert_cmp(rb_tree *tree, rb_node *node_a, rb_node *node_b) {
     result_element *result_b = (result_element*) node_b->value;
 
     if (result_a == result_b) return 0;
-    
+
     int prefix_bits = MIN(result_a->prefix_bits, result_b->prefix_bits);
     for (int i = 0; i < prefix_bits; i++) {
         ret = (TESTBIT(result_a->prefix, i) != 0) - (TESTBIT(result_b->prefix, i) != 0);
@@ -54,7 +51,7 @@ void hash_engine_init(hash_engine *engine, unsigned char *data, int data_bits, i
 
         result_element *el = engine->results + i;
         el->prefix_bits = portion_bits;
-        el->prefix = (unsigned char*) malloc(ceil((double) portion_bits/8) * sizeof (unsigned char));
+        el->prefix = (unsigned char*) calloc(ceil((double) portion_bits/8), sizeof (unsigned char));
 
         for (int j = 0; j < portion_bits; j++) {
             if (TESTBIT(data, split_index+j) != 0)
@@ -74,7 +71,7 @@ void hash_engine_init(hash_engine *engine, unsigned char *data, int data_bits, i
     }
 }
 
-void print_statusline(hash_engine *engine, double starttime, unsigned long progress, double last_print, unsigned long last_progress)
+void print_statusline(hash_engine *engine, unsigned long progress, double rate)
 {
     unsigned long median = 0;
     for (int i = 0; i < engine->results_num; i++) {
@@ -82,9 +79,6 @@ void print_statusline(hash_engine *engine, double starttime, unsigned long progr
         unsigned long pow = (((unsigned long) 1) << bits);
         median += log(2) / (log(pow)-log(pow-1));
     }
-
-    double delta = omp_get_wtime() - last_print;
-    double rate = (double) (progress - last_progress)/delta;
 
     char const *remtarget = "median";
     if (progress > median) {
@@ -125,4 +119,3 @@ result_element* hash_engine_search(hash_engine *engine, unsigned char *prefix, i
 
     return (result_element*) rb_tree_find(engine->rb_tree, &search_el, &result_el_rb_test_cmp);
 }
-

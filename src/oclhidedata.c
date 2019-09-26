@@ -1,9 +1,9 @@
-#include "hash_method.h"
 #include "hash_engine.h"
+#include "hash_engine_ocl.h"
 
 #include <limits.h>
 #include <string.h>
-#include <omp.h>
+#include <time.h>
 #include <time.h>
 #include <stdio.h>
 #include <cerrno>
@@ -15,6 +15,8 @@
 #include <math.h>
 
 #define BUFFER_SIZE 1024
+
+hash_engine_ocl *ocl_engine;
 
 void handler(int sig)
 {
@@ -52,6 +54,7 @@ unsigned char* read_file(FILE *f, int *size)
     return result;
 }
 
+
 void usage(const char *name)
 {
     fprintf(stderr,
@@ -69,62 +72,6 @@ void usage(const char *name)
 "                       standard input.\n", name);
 }
 
-int hash_engine_run(hash_engine *engine, hash_method *method)
-{
-    fprintf(stderr, "Starting engine\n");
-
-    unsigned long progress = 0;
-    unsigned long last_progress = 0;
-    double last_print = 0;
-    double starttime = omp_get_wtime();
-    # pragma omp parallel
-    {
-        fprintf(stderr, "Starting thread %d\n", omp_get_thread_num());
-
-        int prefix_bits = hash_method_max_prefix_bits(method);
-        int prefix_bytes = (int) ceil((double) prefix_bits/8);
-        int batch_size = hash_method_batch_size(method);
-        unsigned char *prefix_container = (unsigned char*) calloc(batch_size * prefix_bytes, sizeof(unsigned char));
-        unsigned char *prefixes[batch_size];
-        for (int i = 0; i < batch_size; i++)
-            prefixes[i] = prefix_container + i * prefix_bytes;
-
-        hash_context *hash_ctx = hash_context_alloc(method);
-        hash_context_rekey(method, hash_ctx);
-        hash_context_next_result(method, hash_ctx);
-
-        while (rb_tree_size(engine->rb_tree) > 0) {
-            hash_context_get_prefixes(method, hash_ctx, prefix_bits, prefixes);
-
-            for (int i = 0; i < batch_size; i++) {
-                result_element *node = hash_engine_search(engine, prefixes[i], prefix_bits);
-                progress++;
-
-                if (node != NULL) {
-                    serialize_result(method, hash_ctx, i, &(node->hash_str), &(node->preimage_str));
-                    hash_context_rekey(method, hash_ctx);
-                    rb_tree_remove(engine->rb_tree, node);
-                    break;
-                }
-            }
-
-            if (hash_context_next_result(method, hash_ctx) == 0)
-                break; // TODO notify threads
-
-            double now = omp_get_wtime();
-            if (now - last_print > 1) {
-                double delta = now - last_print;
-                double rate = (double) (progress - last_progress)/delta;
-                print_statusline(engine, progress, rate);
-                last_print = now;
-                last_progress = progress;
-            }
-        }
-    }
-
-    return 1;
-}
-
 int main(int argc, char *argv[])
 {
     signal(SIGSEGV, handler);
@@ -134,10 +81,20 @@ int main(int argc, char *argv[])
     int strategy_options_num = 0;
     FILE *infile = NULL;
     char *instr = NULL;
-    int bits = -1;
+    int bits = 24;
 
+    int platformidx = -1;
+    int deviceidx = -1;
+    int verify_mode = 0;
+    int safe_mode = 0;
+    int nthreads = 0;
+    int worksize = 0;
+    int nrows = 0, ncols = 0;
+    int invsize = 0;
+    char *devstr;
 
     int opt;
+    // TODO VG parameters
     while ((opt = getopt(argc, argv, ":h?:s:X:i:f:n:")) != -1) {
         switch (opt) {
             case 's':
@@ -193,56 +150,97 @@ int main(int argc, char *argv[])
         data_size = strlen(instr);
     }
 
-    hash_method *method;
-    if (strcmp(strategy, "p2pk") == 0) {
-        method = hash_method_p2pk();
-        if (bits == -1) bits = 16;
-    } else if (strcmp(strategy, "p2pkh") == 0) {
-        method = hash_method_p2pkh();
-        if (bits == -1) bits = 16;
-    } else if (strcmp(strategy, "p2sh") == 0) {
-        unsigned char* pubkey = NULL;
-        int pubkey_len;
-        for (int i = 0; i < strategy_options_num; i++) {
-            if (strcmp(strategy_options[2*i], "pubkey") == 0) {
-                char *hexstr = strategy_options[2*i+1];
-                pubkey_len = strlen(hexstr)/2;
-                pubkey = (unsigned char*) malloc(pubkey_len);
+    // TODO implement methods
 
-                for (int j = 0; j < pubkey_len; j++) {
-                    sscanf(hexstr, "%2hhx", &pubkey[j]);
-                    hexstr += 2;
-                }
+    ocl_engine = (hash_engine_ocl*) malloc(sizeof(hash_engine_ocl));
 
-                break;
-            }
-        }
-
-        if (pubkey == NULL) {
-            fprintf(stderr, "Strategy p2sh requires strategy option \"pubkey\". Supply hex-encoded public key with option -Xpubkey=<hexstr>.\n");
-            return 1;
-        }
-
-        if (pubkey_len != 33 && pubkey_len != 65) {
-            fprintf(stderr, "Supplied public key needs to be 33 or 65 bytes long.\n");
-            return 1;
-        }
-
-        method = hash_method_p2sh(pubkey, pubkey_len);
-        if (bits == -1) bits = 24;
+    if (devstr != NULL) {
+        hash_engine_ocl_init_from_devstr(ocl_engine, devstr, safe_mode, verify_mode, data, data_size * 8, bits);
     } else {
-        fprintf(stderr, "Option -s <strategy> must be specified. Available strategies are \"p2pk\", \"p2pkh\", \"p2sh\".\n");
+        hash_engine_ocl_init(ocl_engine, platformidx, deviceidx, safe_mode, verify_mode, worksize, nthreads, nrows, ncols, invsize, data, data_size * 8, bits);
+    }
+
+    if (!hash_engine_ocl_run(ocl_engine)) {
+        // TODO report error
         return 1;
     }
 
-    hash_engine engine;
-    hash_engine_init(&engine, data, data_size * 8, bits);
-    hash_engine_run(&engine, method);
-
     fprintf(stderr, "\n");
-    for (int i = 0; i < engine.results_num; i++) {
-        result_element res = engine.results[i];
+    for (int i = 0; i < ocl_engine->base->results_num; i++) {
+        result_element res = ocl_engine->base->results[i];
         printf("%s %s\n", res.hash_str, res.preimage_str);
     }
 }
 
+int vcp_test_func(vg_exec_context_t *vxcp)
+{
+    // 1: found, rekey
+    // 2: found, terminate
+    // 0: no match
+
+    int ret = 0;
+
+    unsigned char *hash = vxcp->vxc_binres + 1;
+    result_element *node = hash_engine_search(ocl_engine->base, hash, 8*20);
+    if (node != NULL) {
+        ret = 1;
+        rb_tree_remove(ocl_engine->base->rb_tree, node);
+
+        vg_exec_context_consolidate_key(vxcp);
+        char buffer[2];
+        char *hash_str = (char*) malloc((2*20+1) * sizeof (char));
+        for (int i = 0; i < 20; i++) {
+            sprintf(buffer, "%.2X", hash[i]);
+            memcpy(hash_str+2*i, buffer, 2);
+        }
+        hash_str[2*20] = '\0';
+
+        node->hash_str = hash_str;
+        node->preimage_str = BN_bn2hex(EC_KEY_get0_private_key(vxcp->vxc_key));
+        vxcp->vxc_vc->vc_pattern_generation++;
+    }
+
+    if (rb_tree_size(ocl_engine->base->rb_tree) == 0)
+        ret = 2;
+
+    return ret;
+}
+
+int vcp_hash160_sort_func(vg_context_t *vcp, void *buf)
+{
+    unsigned char *cbuf = (unsigned char *) buf;
+    int npfx = 0;
+
+    struct rb_tree *tree = ocl_engine->base->rb_tree;
+    struct rb_iter *iter = rb_iter_create();
+    if (!iter) return 0;
+
+
+    for (result_element *re = (result_element*) rb_iter_first(iter, tree); re; re = (result_element*) rb_iter_next(iter)) {
+        npfx++;
+        if (!buf) continue;
+
+        unsigned char *data = re->prefix;
+        memset(cbuf, 0, 20);
+        for (int i = 0; i <= re->prefix_bits; i++) {
+            if (TESTBIT(data, i)) SETBIT(cbuf, i);
+        }
+        cbuf += 20;
+
+        memset(cbuf, 255, 20);
+        for (int i = 0; i <= re->prefix_bits; i++) {
+            if (!TESTBIT(data, i)) CLEARBIT(cbuf, i);
+        }
+        cbuf += 20;
+
+    }
+    rb_iter_dealloc(iter);
+
+
+    return npfx;
+}
+
+void vcp_timing_func(vg_context_t *vcp, double count, unsigned long long rate, unsigned long long total)
+{
+    print_statusline(ocl_engine->base, total, (double) rate);
+}
