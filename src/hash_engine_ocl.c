@@ -5,11 +5,6 @@
 
 #include <cstring>
 
-
-void vg_drop_timing_fn(vg_context_t *vcp, double count, unsigned long long rate, unsigned long long total)
-{
-}
-
 vg_context_t* vg_context_new()
 {
     vg_context_t *vcp = NULL;
@@ -25,20 +20,20 @@ vg_context_t* vg_context_new()
     vcp->vc_free = NULL;
     vcp->vc_add_patterns = NULL;
     vcp->vc_clear_all_patterns = NULL;
-    /*vcp->vc_test = vocp_test_func;*/
-    vcp->vc_hash160_sort = NULL;
+    vcp->vc_test = vcp_test_func;
+    vcp->vc_hash160_sort = vcp_hash160_sort_func;
     vcp->vc_verbose = 2;
     vcp->vc_result_file = NULL;
     vcp->vc_remove_on_match = 0;
     vcp->vc_only_one = 0;
     vcp->vc_pubkeytype = 0;
     vcp->vc_pubkey_base = NULL;
-    vcp->vc_output_timing = vg_drop_timing_fn;
+    vcp->vc_output_timing = vcp_timing_func;
 
     return vcp;
 }
 
-int hash_engine_ocl_init_from_devstr(hash_engine_ocl *engine, char *devstr, int safe_mode, int verify, unsigned char *data, int data_bits, int prefix_bits)
+int hash_engine_ocl_init_from_devstr(hash_engine_ocl *ocl_engine, char *devstr, int safe_mode, int verify, unsigned char *data, int data_bits, int prefix_bits)
 {
     vg_context_t *vcp = vg_context_new();
     vg_ocl_context_t *vocp = vg_ocl_context_new_from_devstr(vcp, devstr, safe_mode, verify);
@@ -48,15 +43,14 @@ int hash_engine_ocl_init_from_devstr(hash_engine_ocl *engine, char *devstr, int 
 		return 0;
     }
 
-    engine->base = (hash_engine*) malloc(sizeof (hash_engine));
-    hash_engine_init(engine->base, data, data_bits, prefix_bits);
-    engine->vocp = vocp;
+    ocl_engine->base = (hash_engine*) malloc(sizeof (hash_engine));
+    hash_engine_init(ocl_engine->base, data, data_bits, prefix_bits);
+    ocl_engine->vocp = vocp;
 
     return 1;
 }
 
-int hash_engine_ocl_init(hash_engine_ocl *engine,
-    int platformidx, int deviceidx,
+int hash_engine_ocl_init(hash_engine_ocl *ocl_engine, int platformidx, int deviceidx,
 	int safe_mode, int verify,
 	int worksize, int nthreads, int nrows, int ncols,
 	int invsize,
@@ -70,18 +64,17 @@ int hash_engine_ocl_init(hash_engine_ocl *engine,
 		return 0;
     }
 
-    engine->base = (hash_engine*) malloc(sizeof (hash_engine));
-    hash_engine_init(engine->base, data, data_bits, prefix_bits);
-    engine->vocp = vocp;
+    ocl_engine->base = (hash_engine*) malloc(sizeof (hash_engine));
+    hash_engine_init(ocl_engine->base, data, data_bits, prefix_bits);
+    ocl_engine->vocp = vocp;
 
     return 1;
 }
 
-int hash_engine_ocl_run(hash_engine_ocl *engine, vg_test_func_t test_func)
+int hash_engine_ocl_run(hash_engine_ocl *ocl_engine)
 {
-    vg_ocl_context_t *vocp = engine->vocp;
+    vg_ocl_context_t *vocp = ocl_engine->vocp;
     vg_context_t *vcp = vocp->base.vxc_vc;
-    vcp->vc_test = test_func;
 
     if (vg_context_start_threads(vcp))
         return 0;

@@ -19,6 +19,11 @@ int hash_engine_ocl_init(hash_engine_ocl *engine,
 	int worksize, int nthreads, int nrows, int ncols,
 	int invsize,
     unsigned char *data, int data_bits, int prefix_bits);
-int hash_engine_ocl_run(hash_engine_ocl *engine, vg_test_func_t test_fun);
+int hash_engine_ocl_run(hash_engine_ocl *engine);
+
+int vcp_test_func(vg_exec_context_t *vxcp);
+int vcp_hash160_sort_func(vg_context_t *vcp, void *buf);
+void vcp_timing_func(vg_context_t *vcp, double count, unsigned long long rate, unsigned long long total);
+
 
 #endif

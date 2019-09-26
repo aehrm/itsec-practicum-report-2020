@@ -1,8 +1,9 @@
+#include "hash_engine.h"
 #include "hash_engine_ocl.h"
 
 #include <limits.h>
 #include <string.h>
-#include <omp.h>
+#include <time.h>
 #include <time.h>
 #include <stdio.h>
 #include <cerrno>
@@ -14,6 +15,8 @@
 #include <math.h>
 
 #define BUFFER_SIZE 1024
+
+hash_engine_ocl *ocl_engine;
 
 void handler(int sig)
 {
@@ -51,26 +54,6 @@ unsigned char* read_file(FILE *f, int *size)
     return result;
 }
 
-hash_engine_ocl engine;
-double ocl_starttime;
-unsigned long ocl_progress;
-unsigned long ocl_last_progress;
-double ocl_last_print;
-
-int vocp_test_func(vg_exec_context_t *vxcp) {
-    // 1: found, rekey
-    // 2: found, terminate
-    // 0: no match
-    
-    double now = omp_get_wtime();
-    if (now - ocl_last_print > 1) {
-        print_statusline(engine.base, ocl_starttime, ocl_progress, ocl_last_print, ocl_last_progress);
-        ocl_last_print = now;
-        ocl_last_progress = ocl_progress;
-    }
-
-    return 0;
-}
 
 void usage(const char *name)
 {
@@ -98,7 +81,7 @@ int main(int argc, char *argv[])
     int strategy_options_num = 0;
     FILE *infile = NULL;
     char *instr = NULL;
-    int bits = -1;
+    int bits = 24;
 
     int platformidx = -1;
     int deviceidx = -1;
@@ -169,24 +152,95 @@ int main(int argc, char *argv[])
 
     // TODO implement methods
 
+    ocl_engine = (hash_engine_ocl*) malloc(sizeof(hash_engine_ocl));
+
     if (devstr != NULL) {
-        hash_engine_ocl_init_from_devstr(&engine, devstr, safe_mode, verify_mode, data, data_size * 8, bits);
+        hash_engine_ocl_init_from_devstr(ocl_engine, devstr, safe_mode, verify_mode, data, data_size * 8, bits);
     } else {
-        hash_engine_ocl_init(&engine, platformidx, deviceidx, safe_mode, verify_mode, worksize, nthreads, nrows, ncols, invsize, data, data_size * 8, bits);
+        hash_engine_ocl_init(ocl_engine, platformidx, deviceidx, safe_mode, verify_mode, worksize, nthreads, nrows, ncols, invsize, data, data_size * 8, bits);
     }
 
-    ocl_starttime = omp_get_wtime();
-    ocl_progress = 0;
-    ocl_last_progress = 0;
-    ocl_last_print = 0;
-    if (!hash_engine_ocl_run(&engine, vocp_test_func)) {
+    if (!hash_engine_ocl_run(ocl_engine)) {
         // TODO report error
         return 1;
     }
 
     fprintf(stderr, "\n");
-    for (int i = 0; i < engine.base->results_num; i++) {
-        result_element res = engine.base->results[i];
+    for (int i = 0; i < ocl_engine->base->results_num; i++) {
+        result_element res = ocl_engine->base->results[i];
         printf("%s %s\n", res.hash_str, res.preimage_str);
     }
+}
+
+int vcp_test_func(vg_exec_context_t *vxcp)
+{
+    // 1: found, rekey
+    // 2: found, terminate
+    // 0: no match
+
+    int ret = 0;
+
+    unsigned char *hash = vxcp->vxc_binres + 1;
+    result_element *node = hash_engine_search(ocl_engine->base, hash, 8*20);
+    if (node != NULL) {
+        ret = 1;
+        rb_tree_remove(ocl_engine->base->rb_tree, node);
+
+        vg_exec_context_consolidate_key(vxcp);
+        char buffer[2];
+        char *hash_str = (char*) malloc((2*20+1) * sizeof (char));
+        for (int i = 0; i < 20; i++) {
+            sprintf(buffer, "%.2X", hash[i]);
+            memcpy(hash_str+2*i, buffer, 2);
+        }
+        hash_str[2*20] = '\0';
+
+        node->hash_str = hash_str;
+        node->preimage_str = BN_bn2hex(EC_KEY_get0_private_key(vxcp->vxc_key));
+        vxcp->vxc_vc->vc_pattern_generation++;
+    }
+
+    if (rb_tree_size(ocl_engine->base->rb_tree) == 0)
+        ret = 2;
+
+    return ret;
+}
+
+int vcp_hash160_sort_func(vg_context_t *vcp, void *buf)
+{
+    unsigned char *cbuf = (unsigned char *) buf;
+    int npfx = 0;
+
+    struct rb_tree *tree = ocl_engine->base->rb_tree;
+    struct rb_iter *iter = rb_iter_create();
+    if (!iter) return 0;
+
+
+    for (result_element *re = (result_element*) rb_iter_first(iter, tree); re; re = (result_element*) rb_iter_next(iter)) {
+        npfx++;
+        if (!buf) continue;
+
+        unsigned char *data = re->prefix;
+        memset(cbuf, 0, 20);
+        for (int i = 0; i <= re->prefix_bits; i++) {
+            if (TESTBIT(data, i)) SETBIT(cbuf, i);
+        }
+        cbuf += 20;
+
+        memset(cbuf, 255, 20);
+        for (int i = 0; i <= re->prefix_bits; i++) {
+            if (!TESTBIT(data, i)) CLEARBIT(cbuf, i);
+        }
+        cbuf += 20;
+
+    }
+    rb_iter_dealloc(iter);
+
+
+    return npfx;
+}
+
+void vcp_timing_func(vg_context_t *vcp, double count, unsigned long long rate, unsigned long long total)
+{
+    print_statusline(ocl_engine->base, total, (double) rate);
 }
