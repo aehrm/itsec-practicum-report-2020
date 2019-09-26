@@ -205,7 +205,7 @@ void *
 rb_tree_find(struct rb_tree *self, void *value, rb_tree_node_cmp_f cmp_f) {
     void *result = NULL;
     if (self) {
-        struct rb_node node = { .value = value };
+        struct rb_node node; node.value = value ;
         struct rb_node *it = self->root;
         int cmp = 0;
         while (it) {
@@ -310,7 +310,7 @@ int
 rb_tree_remove_with_cb (struct rb_tree *self, void *value, rb_tree_node_f node_cb) {
     if (self->root != NULL) {
         struct rb_node head = {0}; // False tree root
-        struct rb_node node = { .value = value }; // Value wrapper node
+        struct rb_node node; node.value = value; // Value wrapper node
         struct rb_node *q, *p, *g; // Helpers
         struct rb_node *f = NULL;  // Found item
         int dir = 1;

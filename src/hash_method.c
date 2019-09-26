@@ -55,4 +55,4 @@ void serialize_result(hash_method *meth, hash_context *res, int index, char **ha
 
 #include "hash_method_p2pk.c"
 #include "hash_method_p2pkh.c"
-/*#include "hash_method_p2sh.c"*/
+#include "hash_method_p2sh.c"

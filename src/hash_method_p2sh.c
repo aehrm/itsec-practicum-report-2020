@@ -1,11 +1,18 @@
 #include "hash_method.h"
-#include "secp256k1.h"
+#include <openssl/bn.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/bn.h>
+#include <openssl/ec.h>
+#include <openssl/obj_mac.h>
+#include <openssl/ripemd.h>
+#include <openssl/sha.h>
 #include <math.h>
 #include <bsd/stdlib.h>
 #include <unistd.h>
 #include <math.h>
-#include <openssl/ripemd.h>
-#include <openssl/sha.h>
+
+#define HASH_BYTES 20
 
 static unsigned char SCRIPT_TEMPLATE_33[57]
     = {
@@ -32,11 +39,16 @@ struct p2sh_params {
 };
 
 struct p2sh_hash_ctx {
-    secp256k1_scalar nonce;
+    BIGNUM *nonce;
     int script_size;
     unsigned char script[57];
     unsigned char ripemdhash[20];
 };
+
+int p2sh_batch_size(hash_method *meth)
+{
+    return 1;
+}
 
 int p2sh_max_bits(void *params)
 {
@@ -49,7 +61,8 @@ hash_context* p2sh_ctx_alloc(void *params)
     int pubkey_len = ((p2sh_params*) params)->pubkey_len;
 
     hash_context *ctx = malloc(sizeof (p2sh_hash_ctx));
-    secp256k1_scalar *nonce = &(((p2sh_hash_ctx*) ctx)->nonce);
+    ((p2sh_hash_ctx*) ctx)->nonce = BN_new();
+
     unsigned char *script = ((p2sh_hash_ctx*) ctx)->script;
     ((p2sh_hash_ctx*) ctx)->script_size = pubkey_len + 24;
 
@@ -65,29 +78,24 @@ hash_context* p2sh_ctx_alloc(void *params)
 
 void p2sh_ctx_rekey(void *params, hash_context *ctx)
 {
-    secp256k1_scalar *nonce = &((p2sh_hash_ctx*) ctx)->nonce;
-    unsigned char nonce_bytes[32];
-    arc4random_buf(nonce_bytes, 32);
-    secp256k1_scalar_set_b32(nonce, nonce_bytes, NULL);
+    BIGNUM *nonce = ((p2sh_hash_ctx*) ctx)->nonce;
+    BN_rand(nonce, HASH_BYTES * 8, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 }
 
 int p2sh_ctx_next(void *params, hash_context *ctx)
 {
-    secp256k1_scalar *nonce = &(((p2sh_hash_ctx*) ctx)->nonce);
+    BIGNUM *nonce = ((p2sh_hash_ctx*) ctx)->nonce;
     unsigned char *script = ((p2sh_hash_ctx*) ctx)->script;
     unsigned char *hash = ((p2sh_hash_ctx*) ctx)->ripemdhash;
     int script_size = ((p2sh_hash_ctx*) ctx)->script_size;
 
-    secp256k1_scalar ONE;
-    secp256k1_scalar_set_int(&ONE, 1);
-
     // update nonce
-    secp256k1_scalar_add(nonce, nonce, &ONE);
+    BN_add_word(nonce, 1);
 
     // assemble script
-    unsigned char nonce_bytes[32];
-    secp256k1_scalar_get_b32(nonce_bytes, nonce);
-    memcpy(script+1, nonce_bytes+12, 20);
+    unsigned char nonce_bytes[HASH_BYTES];
+    BN_bn2bin(nonce, nonce_bytes);
+    memcpy(script+1, nonce_bytes, HASH_BYTES);
 
     // comupte ripemd(sha256(pubkey))
     unsigned char sha256md[32];
@@ -98,9 +106,8 @@ int p2sh_ctx_next(void *params, hash_context *ctx)
     return 1;
 }
 
-void p2sh_serialize_result(void *params, hash_context *ctx, char **hash_serialized, char **preimage_serialized)
+void p2sh_serialize_result(void *params, hash_context *ctx, int index, char **hash_serialized, char **preimage_serialized)
 {
-    secp256k1_scalar *nonce = &(((p2sh_hash_ctx*) ctx)->nonce);
     unsigned char *script = ((p2sh_hash_ctx*) ctx)->script;
     unsigned char *hash = ((p2sh_hash_ctx*) ctx)->ripemdhash;
     int script_size = ((p2sh_hash_ctx*) ctx)->script_size;
@@ -129,10 +136,10 @@ void p2sh_serialize_result(void *params, hash_context *ctx, char **hash_serializ
 }
 
 
-void p2sh_ctx_prefix(void *params, hash_context *ctx, int prefix_bits, unsigned char *prefix)
+void p2sh_ctx_prefixes(void *params, hash_context *ctx, int prefix_bits, unsigned char **prefixes)
 {
     unsigned char *hash = ((p2sh_hash_ctx*) ctx)->ripemdhash;
-    memcpy(prefix, hash, ceil((double) prefix_bits / 8));
+    memcpy(prefixes[0], hash, ceil((double) prefix_bits / 8));
 }
 
 hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len)
@@ -142,8 +149,9 @@ hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len)
     meth->hash_context_alloc = &p2sh_ctx_alloc;
     meth->hash_context_rekey = &p2sh_ctx_rekey;
     meth->hash_context_next_result = &p2sh_ctx_next;
-    meth->hash_context_get_prefix = &p2sh_ctx_prefix;
+    meth->hash_context_get_prefixes = &p2sh_ctx_prefixes;
     meth->serialize_result = &p2sh_serialize_result;
+    meth->batch_size = &p2sh_batch_size;
 
     p2sh_params *params = (p2sh_params*) malloc(sizeof(p2sh_params));
     params->pubkey_len = pubkey_len;
