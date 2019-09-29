@@ -1,5 +1,6 @@
 #include "hash_method.h"
 #include "hash_engine.h"
+#include "util.h"
 
 #include <limits.h>
 #include <string.h>
@@ -101,7 +102,7 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
                 progress++;
 
                 if (node != NULL) {
-                    serialize_result(method, hash_ctx, i, &(node->hash_str), &(node->preimage_str));
+                    hash_context_write_result(method, hash_ctx, i, node);
                     hash_context_rekey(method, hash_ctx);
                     rb_tree_remove(engine->rb_tree, node);
                     break;
@@ -239,10 +240,18 @@ int main(int argc, char *argv[])
     hash_engine_init(&engine, data, data_size * 8, bits);
     hash_engine_run(&engine, method);
 
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\nGenerated hash/preimage pairs\n");
     for (int i = 0; i < engine.results_num; i++) {
         result_element res = engine.results[i];
-        printf("%s %s\n", res.hash_str, res.preimage_str);
+        fprintf(stderr, "#%d: %s %s\n", i, buftohex(res.hash, res.hash_len), buftohex(res.preimage, res.preimage_len));
     }
+
+    fprintf(stderr, "\nGenerated transaction\n");
+    int tx_len = hash_method_construct_tx(method, NULL, engine.results, engine.results_num);
+    unsigned char *tx = (unsigned char*) malloc(sizeof(unsigned char*) * tx_len);
+    hash_method_construct_tx(method, tx, engine.results, engine.results_num);
+    printf("%s\n", buftohex(tx, tx_len));
+
+
 }
 

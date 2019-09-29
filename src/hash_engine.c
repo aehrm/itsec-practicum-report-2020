@@ -67,7 +67,7 @@ void hash_engine_init(hash_engine *engine, unsigned char *data, int data_bits, i
         for (int k = 0; k < ceil((double) portion_bits/8); k++) {
             fprintf(stderr, "%02x", el->prefix[k]);
         }
-        printf(", %d bits\n", el->prefix_bits);
+        fprintf(stderr, ", %d bits\n", el->prefix_bits);
     }
 }
 

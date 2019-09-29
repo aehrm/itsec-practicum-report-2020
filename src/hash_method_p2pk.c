@@ -1,4 +1,5 @@
 #include "hash_method.h"
+#include "util.h"
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
@@ -30,6 +31,20 @@ int p2pk_max_bits(void *params)
 int p2pk_batch_size(void *params)
 {
     return BATCH_SIZE;
+}
+
+int p2pk_construct_tx(void *params, unsigned char *out, result_element *results, int results_num)
+{
+    unsigned char scripts[35 * results_num];
+    unsigned char *buf = scripts;
+    for (int i = 0; i < results_num; i++) {
+        buf[0] = 33; // 33 bytes to push
+        memcpy(buf+1, results[i].hash, 33); // pubkey
+        buf[34] = 0xac; // OP_CHECKSIG
+        buf += 35;
+    }
+
+    return util_construct_tx(scripts, 35, results_num, out);
 }
 
 hash_context* p2pk_ctx_alloc(void *params)
@@ -93,7 +108,7 @@ int p2pk_ctx_next(void *params, hash_context *ctx)
     return 1;
 }
 
-void p2pk_serialize_result(void *params, hash_context *ctx, int index, char **hash_serialized, char **preimage_serialized)
+void p2pk_write_result(void *params, hash_context *ctx, int index, result_element *res)
 {
     BN_CTX *bn_ctx = ((p2pk_hash_ctx*) ctx)->bn_ctx;
     EC_KEY *basekey = ((p2pk_hash_ctx*) ctx)->basekey;
@@ -102,7 +117,8 @@ void p2pk_serialize_result(void *params, hash_context *ctx, int index, char **ha
     const EC_POINT *pgen = EC_GROUP_get0_generator(pgroup);
 
     // public key in compressed format (i.e. omitting y-coordinate)
-    *hash_serialized = EC_POINT_point2hex(pgroup, points[index], POINT_CONVERSION_COMPRESSED, bn_ctx);
+    res->hash = (unsigned char*) malloc(33 * sizeof(unsigned char));
+    res->hash_len = EC_POINT_point2oct(pgroup, points[index], POINT_CONVERSION_COMPRESSED, res->hash, 33, bn_ctx);
 
     // compute private key; priv_basekey + i
     BIGNUM *priv = BN_dup(EC_KEY_get0_private_key(basekey));
@@ -110,7 +126,8 @@ void p2pk_serialize_result(void *params, hash_context *ctx, int index, char **ha
     BN_add(priv, priv, offset);
 
     // private key as 256-bit number (TODO use wallet import format)
-    *preimage_serialized = BN_bn2hex(priv);
+    res->preimage = (unsigned char*) malloc(32 * sizeof(unsigned char));
+    res->preimage_len = BN_bn2bin(priv, res->preimage);
 }
 
 
@@ -138,11 +155,12 @@ hash_method* hash_method_p2pk()
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2pk_max_bits;
     meth->batch_size = &p2pk_batch_size;
+    meth->construct_tx = &p2pk_construct_tx;
     meth->hash_context_alloc = &p2pk_ctx_alloc;
     meth->hash_context_rekey = &p2pk_ctx_rekey;
     meth->hash_context_next_result = &p2pk_ctx_next;
     meth->hash_context_get_prefixes = &p2pk_ctx_prefixes;
-    meth->serialize_result = &p2pk_serialize_result;
+    meth->write_result = &p2pk_write_result;
 
     return (hash_method*) meth;
 };

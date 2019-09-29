@@ -11,8 +11,10 @@
 typedef struct {
     unsigned char *prefix;
     int prefix_bits;
-    char *hash_str;
-    char *preimage_str;
+    unsigned char *hash;
+    int hash_len;
+    unsigned char *preimage;
+    int preimage_len;
 } result_element;
 
 typedef struct {

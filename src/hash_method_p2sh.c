@@ -55,6 +55,21 @@ int p2sh_max_bits(void *params)
     return 160;
 }
 
+int p2sh_construct_tx(void *params, unsigned char *out, result_element *results, int results_num)
+{
+    unsigned char scripts[23 * results_num];
+    unsigned char *buf = scripts;
+    for (int i = 0; i < results_num; i++) {
+        buf[0] = 0xA9; // OP_HASH160
+        buf[1] = 20; // 20 bytes to push
+        memcpy(buf+2, results[i].hash, 20); // pubkey
+        buf[22] = 0x87; // OP_EQUAL
+        buf += 23;
+    }
+
+    return util_construct_tx(scripts, 23, results_num, out);
+}
+
 hash_context* p2sh_ctx_alloc(void *params)
 {
     unsigned char *pubkey = ((p2sh_params*) params)->pubkey;
@@ -79,7 +94,7 @@ hash_context* p2sh_ctx_alloc(void *params)
 void p2sh_ctx_rekey(void *params, hash_context *ctx)
 {
     BIGNUM *nonce = ((p2sh_hash_ctx*) ctx)->nonce;
-    BN_rand(nonce, HASH_BYTES * 8, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+    BN_rand(nonce, HASH_BYTES * 8, -1, -1);
 }
 
 int p2sh_ctx_next(void *params, hash_context *ctx)
@@ -106,7 +121,7 @@ int p2sh_ctx_next(void *params, hash_context *ctx)
     return 1;
 }
 
-void p2sh_serialize_result(void *params, hash_context *ctx, int index, char **hash_serialized, char **preimage_serialized)
+void p2sh_write_result(void *params, hash_context *ctx, int index, result_element *res)
 {
     unsigned char *script = ((p2sh_hash_ctx*) ctx)->script;
     unsigned char *hash = ((p2sh_hash_ctx*) ctx)->ripemdhash;
@@ -114,25 +129,14 @@ void p2sh_serialize_result(void *params, hash_context *ctx, int index, char **ha
     char buffer[2];
 
     // 20 bytes ripemd hash
-    unsigned char pubkey_serialized[20];
-    char *hash_str = (char*) malloc((2*20+1) * sizeof (char));
-    *hash_serialized = hash_str;
-
-    for (int i = 0; i < 20; i++) {
-        sprintf(buffer, "%.2X", hash[i]);
-        memcpy(hash_str+2*i, buffer, 2);
-    }
-    hash_str[2*20] = '\0';
+    res->hash = (unsigned char*) malloc(20 * sizeof(unsigned char));
+    memcpy(res->hash, hash, 20);
+    res->hash_len = 20;
 
     // script as 57/89 serialized byte string
-    char *preimage_str = (char*) malloc((2*script_size+1) * sizeof (char));
-    *preimage_serialized = preimage_str;
-
-    for (int i = 0; i < script_size; i++) {
-        sprintf(buffer, "%.2X", script[i]);
-        memcpy(preimage_str+2*i, buffer, 2);
-    }
-    preimage_str[2*script_size] = '\0';
+    res->preimage = (unsigned char*) malloc(script_size * sizeof(unsigned char));
+    memcpy(res->hash, script, script_size);
+    res->preimage_len = script_size;
 }
 
 
@@ -146,11 +150,12 @@ hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len)
 {
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2sh_max_bits;
+    meth->construct_tx = &p2sh_construct_tx;
     meth->hash_context_alloc = &p2sh_ctx_alloc;
     meth->hash_context_rekey = &p2sh_ctx_rekey;
     meth->hash_context_next_result = &p2sh_ctx_next;
     meth->hash_context_get_prefixes = &p2sh_ctx_prefixes;
-    meth->serialize_result = &p2sh_serialize_result;
+    meth->write_result = &p2sh_write_result;
     meth->batch_size = &p2sh_batch_size;
 
     p2sh_params *params = (p2sh_params*) malloc(sizeof(p2sh_params));

@@ -35,6 +35,23 @@ int p2pkh_batch_size(void *params)
     return BATCH_SIZE;
 }
 
+int p2pkh_construct_tx(void *params, unsigned char *out, result_element *results, int results_num)
+{
+    unsigned char scripts[25 * results_num];
+    unsigned char *buf = scripts;
+    for (int i = 0; i < results_num; i++) {
+        buf[0] = 0x76; // OP_DUP
+        buf[1] = 0xA9; // OP_HASH160
+        buf[2] = 20; // 33 bytes to push
+        memcpy(buf+3, results[i].hash, 20); // pubkey
+        buf[23] = 0x88; // OP_EQUALVERIFY
+        buf[24] = 0xAC; // OP_CHECKSIG
+        buf += 25;
+    }
+
+    return util_construct_tx(scripts, 25, results_num, out);
+}
+
 hash_context* p2pkh_ctx_alloc(void *params)
 {
     BIGNUM *bn_batch_size = BN_new(); BN_set_word(bn_batch_size, BATCH_SIZE);
@@ -110,7 +127,7 @@ int p2pkh_ctx_next(void *params, hash_context *ctx)
     return 1;
 }
 
-void p2pkh_serialize_result(void *params, hash_context *ctx, int index, char **hash_serialized, char **preimage_serialized)
+void p2pkh_write_result(void *params, hash_context *ctx, int index, result_element *res)
 {
     BN_CTX *bn_ctx = ((p2pkh_hash_ctx*) ctx)->bn_ctx;
     EC_KEY *basekey = ((p2pkh_hash_ctx*) ctx)->basekey;
@@ -118,15 +135,9 @@ void p2pkh_serialize_result(void *params, hash_context *ctx, int index, char **h
     char buffer[2];
 
     // 20 bytes ripemd hash
-    unsigned char pubkey_serialized[HASH_BYTES];
-    char *hash_str = (char*) malloc((2*HASH_BYTES+1) * sizeof (char));
-    *hash_serialized = hash_str;
-
-    for (int i = 0; i < HASH_BYTES; i++) {
-        sprintf(buffer, "%.2X", hash[i]);
-        memcpy(hash_str+2*i, buffer, 2);
-    }
-    hash_str[2*HASH_BYTES] = '\0';
+    res->hash = (unsigned char*) malloc(20 * sizeof(unsigned char));
+    memcpy(res->hash, hash, 20);
+    res->hash_len = 20;
 
     // compute private key; priv_basekey + i
     BIGNUM *priv = BN_dup(EC_KEY_get0_private_key(basekey));
@@ -134,7 +145,8 @@ void p2pkh_serialize_result(void *params, hash_context *ctx, int index, char **h
     BN_add(priv, priv, offset);
 
     // private key as 256-bit number (TODO use wallet import format)
-    *preimage_serialized = BN_bn2hex(priv);
+    res->preimage = (unsigned char*) malloc(32 * sizeof(unsigned char));
+    res->preimage_len = BN_bn2bin(priv, res->preimage);
 }
 
 
@@ -152,11 +164,12 @@ hash_method* hash_method_p2pkh()
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2pkh_max_bits;
     meth->batch_size = &p2pkh_batch_size;
+    meth->construct_tx = &p2pkh_construct_tx;
     meth->hash_context_alloc = &p2pkh_ctx_alloc;
     meth->hash_context_rekey = &p2pkh_ctx_rekey;
     meth->hash_context_next_result = &p2pkh_ctx_next;
     meth->hash_context_get_prefixes = &p2pkh_ctx_prefixes;
-    meth->serialize_result = &p2pkh_serialize_result;
+    meth->write_result = &p2pkh_write_result;
 
     return (hash_method*) meth;
 };
