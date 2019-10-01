@@ -247,9 +247,9 @@ int main(int argc, char *argv[])
     }
 
     fprintf(stderr, "\nGenerated transaction\n");
-    int tx_len = hash_method_construct_tx(method, NULL, engine.results, engine.results_num);
+    int tx_len = hash_methodconstruct_script(method, NULL, engine.results, engine.results_num);
     unsigned char *tx = (unsigned char*) malloc(sizeof(unsigned char*) * tx_len);
-    hash_method_construct_tx(method, tx, engine.results, engine.results_num);
+    hash_methodconstruct_script(method, tx, engine.results, engine.results_num);
     printf("%s\n", buftohex(tx, tx_len));
 
 

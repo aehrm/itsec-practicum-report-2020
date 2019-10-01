@@ -25,7 +25,7 @@ int hash_method_batch_size(hash_method *meth)
     return meth_impl->batch_size(meth_impl->params);
 }
 
-int hash_method_construct_tx(hash_method *meth, unsigned char *out, result_element *results, int results_num)
+int hash_methodconstruct_script(hash_method *meth, unsigned char *out, result_element *results, int results_num)
 {
     hash_method_impl *meth_impl = (hash_method_impl*) meth;
     return meth_impl->construct_tx(meth_impl->params, out, results, results_num);

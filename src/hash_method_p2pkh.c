@@ -35,21 +35,19 @@ int p2pkh_batch_size(void *params)
     return BATCH_SIZE;
 }
 
-int p2pkh_construct_tx(void *params, unsigned char *out, result_element *results, int results_num)
+int p2pkh_construct_script(void *params, unsigned char *out, result_element *result)
 {
-    unsigned char scripts[25 * results_num];
-    unsigned char *buf = scripts;
-    for (int i = 0; i < results_num; i++) {
-        buf[0] = 0x76; // OP_DUP
-        buf[1] = 0xA9; // OP_HASH160
-        buf[2] = 20; // 33 bytes to push
-        memcpy(buf+3, results[i].hash, 20); // pubkey
-        buf[23] = 0x88; // OP_EQUALVERIFY
-        buf[24] = 0xAC; // OP_CHECKSIG
-        buf += 25;
-    }
+    if (out == NULL) return 25;
 
-    return util_construct_tx(scripts, 25, results_num, out);
+    out[0] = 0x76; // OP_DUP
+    out[1] = 0xA9; // OP_HASH160
+    out[2] = 20; // 33 bytes to push
+    memcpy(out+3, results->hash, 20); // pubkey
+    out[23] = 0x88; // OP_EQUALVERIFY
+    out[24] = 0xAC; // OP_CHECKSIG
+    out += 25;
+        
+    return 25;
 }
 
 hash_context* p2pkh_ctx_alloc(void *params)
@@ -164,7 +162,7 @@ hash_method* hash_method_p2pkh()
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2pkh_max_bits;
     meth->batch_size = &p2pkh_batch_size;
-    meth->construct_tx = &p2pkh_construct_tx;
+    meth->construct_tx = &p2pkh_construct_script;
     meth->hash_context_alloc = &p2pkh_ctx_alloc;
     meth->hash_context_rekey = &p2pkh_ctx_rekey;
     meth->hash_context_next_result = &p2pkh_ctx_next;

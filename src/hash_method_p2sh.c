@@ -55,19 +55,17 @@ int p2sh_max_bits(void *params)
     return 160;
 }
 
-int p2sh_construct_tx(void *params, unsigned char *out, result_element *results, int results_num)
+int p2sh_construct_script(void *params, unsigned char *out, result_element *result)
 {
-    unsigned char scripts[23 * results_num];
-    unsigned char *buf = scripts;
-    for (int i = 0; i < results_num; i++) {
-        buf[0] = 0xA9; // OP_HASH160
-        buf[1] = 20; // 20 bytes to push
-        memcpy(buf+2, results[i].hash, 20); // pubkey
-        buf[22] = 0x87; // OP_EQUAL
-        buf += 23;
-    }
+    if (out == NULL) return 23;
 
-    return util_construct_tx(scripts, 23, results_num, out);
+    out[0] = 0xA9; // OP_HASH160
+    out[1] = 20; // 20 bytes to push
+    memcpy(out+2, results[i].hash, 20); // pubkey
+    out[22] = 0x87; // OP_EQUAL
+    out += 23;
+
+    return 23;
 }
 
 hash_context* p2sh_ctx_alloc(void *params)
@@ -150,7 +148,7 @@ hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len)
 {
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2sh_max_bits;
-    meth->construct_tx = &p2sh_construct_tx;
+    meth->construct_tx = &p2sh_construct_script;
     meth->hash_context_alloc = &p2sh_ctx_alloc;
     meth->hash_context_rekey = &p2sh_ctx_rekey;
     meth->hash_context_next_result = &p2sh_ctx_next;
