@@ -47,7 +47,8 @@ void hash_engine_init(hash_engine *engine, unsigned char *data, int data_bits, i
     fprintf(stderr, "Partition program:\n");
     int split_index = 0;
     for (int i = 0; i < engine->results_num; i++) {
-        int portion_bits = (data_bits - split_index) / (engine->results_num - i);
+        int portion_bits = prefix_bits;
+        if (split_index + prefix_bits > data_bits) portion_bits = data_bits - split_index;
 
         result_element *el = engine->results + i;
         el->prefix_bits = portion_bits;
