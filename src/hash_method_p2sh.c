@@ -135,7 +135,7 @@ void p2sh_write_result(void *params, hash_context *ctx, int index, result_elemen
 
     // script as 57/89 serialized byte string
     res->preimage = (unsigned char*) malloc(script_size * sizeof(unsigned char));
-    memcpy(res->hash, script, script_size);
+    memcpy(res->preimage, script, script_size);
     res->preimage_len = script_size;
 }
 
