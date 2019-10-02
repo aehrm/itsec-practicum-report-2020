@@ -61,7 +61,7 @@ int p2sh_construct_script(void *params, unsigned char *out, result_element *resu
 
     out[0] = 0xA9; // OP_HASH160
     out[1] = 20; // 20 bytes to push
-    memcpy(out+2, results[i].hash, 20); // pubkey
+    memcpy(out+2, result->hash, 20); // pubkey
     out[22] = 0x87; // OP_EQUAL
     out += 23;
 
@@ -148,7 +148,7 @@ hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len)
 {
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2sh_max_bits;
-    meth->construct_tx = &p2sh_construct_script;
+    meth->construct_script = &p2sh_construct_script;
     meth->hash_context_alloc = &p2sh_ctx_alloc;
     meth->hash_context_rekey = &p2sh_ctx_rekey;
     meth->hash_context_next_result = &p2sh_ctx_next;

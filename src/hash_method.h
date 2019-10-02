@@ -12,7 +12,7 @@ hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len);
 
 int hash_method_batch_size(hash_method *meth);
 int hash_method_max_prefix_bits(hash_method *meth);
-int hash_methodconstruct_script(hash_method *meth, unsigned char *out, result_element *results, int results_num);
+int hash_method_construct_script(hash_method *meth, unsigned char *out, result_element *result);
 hash_context* hash_context_alloc(hash_method *meth);
 void hash_context_rekey(hash_method *meth, hash_context *ctx);
 int hash_context_next_result(hash_method *meth, hash_context *ctx);

@@ -42,7 +42,7 @@ int p2pkh_construct_script(void *params, unsigned char *out, result_element *res
     out[0] = 0x76; // OP_DUP
     out[1] = 0xA9; // OP_HASH160
     out[2] = 20; // 33 bytes to push
-    memcpy(out+3, results->hash, 20); // pubkey
+    memcpy(out+3, result->hash, 20); // pubkey
     out[23] = 0x88; // OP_EQUALVERIFY
     out[24] = 0xAC; // OP_CHECKSIG
     out += 25;
@@ -162,7 +162,7 @@ hash_method* hash_method_p2pkh()
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2pkh_max_bits;
     meth->batch_size = &p2pkh_batch_size;
-    meth->construct_tx = &p2pkh_construct_script;
+    meth->construct_script = &p2pkh_construct_script;
     meth->hash_context_alloc = &p2pkh_ctx_alloc;
     meth->hash_context_rekey = &p2pkh_ctx_rekey;
     meth->hash_context_next_result = &p2pkh_ctx_next;
