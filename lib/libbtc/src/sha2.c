@@ -176,9 +176,9 @@ typedef uint64_t sha2_word64; /* Exactly 8 bytes */
  * library -- they are intended for private internal visibility/use
  * only.
  */
-void sha512_Last(SHA512_CTX*);
-void sha256_Transform(SHA256_CTX*, const sha2_word32*);
-void sha512_Transform(SHA512_CTX*, const sha2_word64*);
+void sha512_Last(LIBBTC_SHA512_CTX*);
+void sha256_Transform(LIBBTC_SHA256_CTX*, const sha2_word32*);
+void sha512_Transform(LIBBTC_SHA512_CTX*, const sha2_word64*);
 
 
 /*** SHA-XYZ INITIAL HASH VALUES AND CONSTANTS ************************/
@@ -356,9 +356,9 @@ static const sha2_word64 sha512_initial_hash_value[8] = {
 
 
 /*** SHA-256: *********************************************************/
-void sha256_Init(SHA256_CTX* context)
+void sha256_Init(LIBBTC_SHA256_CTX* context)
 {
-    if (context == (SHA256_CTX*)0) {
+    if (context == (LIBBTC_SHA256_CTX*)0) {
         return;
     }
     MEMCPY_BCOPY(context->state, sha256_initial_hash_value, SHA256_DIGEST_LENGTH);
@@ -400,7 +400,7 @@ void sha256_Init(SHA256_CTX* context)
     (h) = T1 + Sigma0_256(a) + Maj((a), (b), (c));                                                               \
     j++
 
-void sha256_Transform(SHA256_CTX* context, const sha2_word32* data)
+void sha256_Transform(LIBBTC_SHA256_CTX* context, const sha2_word32* data)
 {
     sha2_word32 a, b, c, d, e, f, g, h, s0, s1;
     sha2_word32 T1, *W256;
@@ -459,7 +459,7 @@ void sha256_Transform(SHA256_CTX* context, const sha2_word32* data)
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-void sha256_Transform(SHA256_CTX* context, const sha2_word32* data)
+void sha256_Transform(LIBBTC_SHA256_CTX* context, const sha2_word32* data)
 {
     sha2_word32 a, b, c, d, e, f, g, h, s0, s1;
     sha2_word32 T1, T2, *W256;
@@ -540,7 +540,7 @@ void sha256_Transform(SHA256_CTX* context, const sha2_word32* data)
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void sha256_Update(SHA256_CTX* context, const sha2_byte* data, size_t len)
+void sha256_Update(LIBBTC_SHA256_CTX* context, const sha2_byte* data, size_t len)
 {
     unsigned int freespace, usedspace;
 
@@ -586,7 +586,7 @@ void sha256_Update(SHA256_CTX* context, const sha2_byte* data, size_t len)
     usedspace = freespace = 0;
 }
 
-void sha256_Final(sha2_byte digest[], SHA256_CTX* context)
+void sha256_Final(sha2_byte digest[], LIBBTC_SHA256_CTX* context)
 {
     sha2_word32* d = (sha2_word32*)digest;
     unsigned int usedspace;
@@ -645,13 +645,13 @@ void sha256_Final(sha2_byte digest[], SHA256_CTX* context)
     }
 
     /* Clean up state data: */
-    MEMSET_BZERO(context, sizeof(SHA256_CTX));
+    MEMSET_BZERO(context, sizeof(LIBBTC_SHA256_CTX));
     usedspace = 0;
 }
 
 void sha256_Raw(const sha2_byte* data, size_t len, uint8_t digest[SHA256_DIGEST_LENGTH])
 {
-    SHA256_CTX context;
+    LIBBTC_SHA256_CTX context;
     sha256_Init(&context);
     sha256_Update(&context, data, len);
     sha256_Final(digest, &context);
@@ -659,9 +659,9 @@ void sha256_Raw(const sha2_byte* data, size_t len, uint8_t digest[SHA256_DIGEST_
 
 
 /*** SHA-512: *********************************************************/
-void sha512_Init(SHA512_CTX* context)
+void sha512_Init(LIBBTC_SHA512_CTX* context)
 {
-    if (context == (SHA512_CTX*)0) {
+    if (context == (LIBBTC_SHA512_CTX*)0) {
         return;
     }
     MEMCPY_BCOPY(context->state, sha512_initial_hash_value, SHA512_DIGEST_LENGTH);
@@ -702,7 +702,7 @@ void sha512_Init(SHA512_CTX* context)
     (h) = T1 + Sigma0_512(a) + Maj((a), (b), (c));                                                               \
     j++
 
-void sha512_Transform(SHA512_CTX* context, const sha2_word64* data)
+void sha512_Transform(LIBBTC_SHA512_CTX* context, const sha2_word64* data)
 {
     sha2_word64 a, b, c, d, e, f, g, h, s0, s1;
     sha2_word64 T1, *W512 = (sha2_word64*)context->buffer;
@@ -758,7 +758,7 @@ void sha512_Transform(SHA512_CTX* context, const sha2_word64* data)
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-void sha512_Transform(SHA512_CTX* context, const sha2_word64* data)
+void sha512_Transform(LIBBTC_SHA512_CTX* context, const sha2_word64* data)
 {
     sha2_word64 a, b, c, d, e, f, g, h, s0, s1;
     sha2_word64 T1, T2, *W512 = (sha2_word64*)context->buffer;
@@ -837,7 +837,7 @@ void sha512_Transform(SHA512_CTX* context, const sha2_word64* data)
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void sha512_Update(SHA512_CTX* context, const sha2_byte* data, size_t len)
+void sha512_Update(LIBBTC_SHA512_CTX* context, const sha2_byte* data, size_t len)
 {
     unsigned int freespace, usedspace;
 
@@ -883,7 +883,7 @@ void sha512_Update(SHA512_CTX* context, const sha2_byte* data, size_t len)
     usedspace = freespace = 0;
 }
 
-void sha512_Last(SHA512_CTX* context)
+void sha512_Last(LIBBTC_SHA512_CTX* context)
 {
     unsigned int usedspace;
     sha2_word64* t;
@@ -928,7 +928,7 @@ void sha512_Last(SHA512_CTX* context)
     sha512_Transform(context, (sha2_word64*)context->buffer);
 }
 
-void sha512_Final(sha2_byte digest[], SHA512_CTX* context)
+void sha512_Final(sha2_byte digest[], LIBBTC_SHA512_CTX* context)
 {
     sha2_word64* d = (sha2_word64*)digest;
 
@@ -952,12 +952,12 @@ void sha512_Final(sha2_byte digest[], SHA512_CTX* context)
     }
 
     /* Zero out state data */
-    MEMSET_BZERO(context, sizeof(SHA512_CTX));
+    MEMSET_BZERO(context, sizeof(LIBBTC_SHA512_CTX));
 }
 
 void sha512_Raw(const sha2_byte* data, size_t len, uint8_t digest[SHA512_DIGEST_LENGTH])
 {
-    SHA512_CTX context;
+    LIBBTC_SHA512_CTX context;
     sha512_Init(&context);
     sha512_Update(&context, data, len);
     sha512_Final(digest, &context);
@@ -968,7 +968,7 @@ void hmac_sha256(const uint8_t* key, const uint32_t keylen, const uint8_t* msg, 
     int i;
     uint8_t buf[SHA256_BLOCK_LENGTH], o_key_pad[SHA256_BLOCK_LENGTH],
         i_key_pad[SHA256_BLOCK_LENGTH];
-    SHA256_CTX ctx;
+    LIBBTC_SHA256_CTX ctx;
 
     memset(buf, 0, SHA256_BLOCK_LENGTH);
     if (keylen > SHA256_BLOCK_LENGTH) {
@@ -998,7 +998,7 @@ void hmac_sha512(const uint8_t* key, const uint32_t keylen, const uint8_t* msg, 
     int i;
     uint8_t buf[SHA512_BLOCK_LENGTH], o_key_pad[SHA512_BLOCK_LENGTH],
         i_key_pad[SHA512_BLOCK_LENGTH];
-    SHA512_CTX ctx;
+    LIBBTC_SHA512_CTX ctx;
 
     memset(buf, 0, SHA512_BLOCK_LENGTH);
     if (keylen > SHA512_BLOCK_LENGTH) {

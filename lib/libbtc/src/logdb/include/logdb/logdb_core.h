@@ -57,7 +57,7 @@ typedef struct logdb_log_db {
     logdb_memmapper *mem_mapper;
     void *cb_ctx;
     logdb_record *cache_head;
-    SHA256_CTX hashctx;
+    LIBBTC_SHA256_CTX hashctx;
     uint8_t hashlen;
     uint32_t version;
     uint32_t support_flags;

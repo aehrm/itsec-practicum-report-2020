@@ -362,8 +362,8 @@ size_t logdb_cache_size(logdb_log_db* db)
 
 void logdb_write_record(logdb_log_db* db, logdb_record *rec)
 {
-    SHA256_CTX ctx = db->hashctx;
-    SHA256_CTX ctx_final;
+    LIBBTC_SHA256_CTX ctx = db->hashctx;
+    LIBBTC_SHA256_CTX ctx_final;
     uint8_t hash[SHA256_DIGEST_LENGTH];
 
     /* serialize record to buffer */
@@ -400,8 +400,8 @@ void logdb_write_record(logdb_log_db* db, logdb_record *rec)
 logdb_bool logdb_record_deser_from_file(logdb_record* rec, logdb_log_db *db, enum logdb_error *error)
 {
     uint32_t len = 0;
-    SHA256_CTX ctx = db->hashctx; /* prepare a copy of context that allows rollback */
-    SHA256_CTX ctx_final;
+    LIBBTC_SHA256_CTX ctx = db->hashctx; /* prepare a copy of context that allows rollback */
+    LIBBTC_SHA256_CTX ctx_final;
     uint8_t magic_buf[8];
     uint8_t hashcheck[SHA256_DIGEST_LENGTH];
     unsigned char check[SHA256_DIGEST_LENGTH];

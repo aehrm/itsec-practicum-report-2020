@@ -412,7 +412,7 @@ static const struct sha_hmac_test_v sha_hmac_test_vectors[] =
 
 void test_sha_256()
 {
-    SHA256_CTX context;
+    LIBBTC_SHA256_CTX context;
     uint8_t buf[SHA256_DIGEST_LENGTH];
     uint8_t* digest_out; /* use non thread save buffer (optimized for embedded systems) */
     int oLen;
@@ -446,7 +446,7 @@ void test_sha_256()
 
 void test_sha_512()
 {
-    SHA512_CTX context;
+    LIBBTC_SHA512_CTX context;
     uint8_t buf[SHA512_DIGEST_LENGTH];
     uint8_t* digest_out; /* use non thread save buffer (optimized for embedded systems) */
     int oLen;

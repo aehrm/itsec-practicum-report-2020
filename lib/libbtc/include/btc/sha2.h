@@ -43,26 +43,26 @@
 
 LIBBTC_BEGIN_DECL
 
-typedef struct _SHA256_CTX {
+typedef struct _LIBBTC_SHA256_CTX {
     uint32_t state[8];
     uint64_t bitcount;
     uint8_t buffer[SHA256_BLOCK_LENGTH];
-} SHA256_CTX;
+} LIBBTC_SHA256_CTX;
 
-typedef struct _SHA512_CTX {
+typedef struct _LIBBTC_SHA512_CTX {
     uint64_t state[8];
     uint64_t bitcount[2];
     uint8_t buffer[SHA512_BLOCK_LENGTH];
-} SHA512_CTX;
+} LIBBTC_SHA512_CTX;
 
-LIBBTC_API void sha256_Init(SHA256_CTX*);
-LIBBTC_API void sha256_Update(SHA256_CTX*, const uint8_t*, size_t);
-LIBBTC_API void sha256_Final(uint8_t[SHA256_DIGEST_LENGTH], SHA256_CTX*);
+LIBBTC_API void sha256_Init(LIBBTC_SHA256_CTX*);
+LIBBTC_API void sha256_Update(LIBBTC_SHA256_CTX*, const uint8_t*, size_t);
+LIBBTC_API void sha256_Final(uint8_t[SHA256_DIGEST_LENGTH], LIBBTC_SHA256_CTX*);
 LIBBTC_API void sha256_Raw(const uint8_t*, size_t, uint8_t[SHA256_DIGEST_LENGTH]);
 
-LIBBTC_API void sha512_Init(SHA512_CTX*);
-LIBBTC_API void sha512_Update(SHA512_CTX*, const uint8_t*, size_t);
-LIBBTC_API void sha512_Final(uint8_t[SHA512_DIGEST_LENGTH], SHA512_CTX*);
+LIBBTC_API void sha512_Init(LIBBTC_SHA512_CTX*);
+LIBBTC_API void sha512_Update(LIBBTC_SHA512_CTX*, const uint8_t*, size_t);
+LIBBTC_API void sha512_Final(uint8_t[SHA512_DIGEST_LENGTH], LIBBTC_SHA512_CTX*);
 LIBBTC_API void sha512_Raw(const uint8_t*, size_t, uint8_t[SHA512_DIGEST_LENGTH]);
 
 LIBBTC_API void hmac_sha256(const uint8_t* key, const uint32_t keylen, const uint8_t* msg, const uint32_t msglen, uint8_t* hmac);
