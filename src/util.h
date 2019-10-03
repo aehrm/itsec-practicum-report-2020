@@ -1,15 +1,19 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__ 1
 
-typedef struct {
-    int len;
-    unsigned char *tx;
-    tx_chain_el *prev;
-    tx_chain_el *next;
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include "libbtc/include/btc/tx.h"
+
+typedef struct tx_chain_el_ {
+    btc_tx *tx;
+    tx_chain_el_ *prev;
+    tx_chain_el_ *next;
 } tx_chain_el;
 
-char* buftohex(unsigned char *src, int len);
-tx_chain_el* util_construct_txs(unsigned char *scripts, int *scripts_length, int script_num)
+void fdumphex(FILE *f, unsigned char *src, int len);
+tx_chain_el* util_construct_txs(unsigned char **scripts, int *scripts_len, int script_num, int prefix_len, int data_len, int fee);
 
 
 #endif

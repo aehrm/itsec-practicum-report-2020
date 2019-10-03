@@ -1,6 +1,7 @@
 #include "hash_method.h"
 #include "hash_engine.h"
 #include "util.h"
+#include "libbtc/include/btc/tx.h"
 
 #include <limits.h>
 #include <string.h>
@@ -136,6 +137,7 @@ int main(int argc, char *argv[])
     FILE *infile = NULL;
     char *instr = NULL;
     int bits = -1;
+    int fee = 20;
 
 
     int opt;
@@ -194,8 +196,10 @@ int main(int argc, char *argv[])
         data_size = strlen(instr);
     }
 
-    hash_method *method;
-    if (strcmp(strategy, "p2pk") == 0) {
+    hash_method *method = NULL;
+    if (strategy == NULL) {
+        // break
+    } else if (strcmp(strategy, "p2pk") == 0) {
         method = hash_method_p2pk();
         if (bits == -1) bits = 16;
     } else if (strcmp(strategy, "p2pkh") == 0) {
@@ -231,7 +235,9 @@ int main(int argc, char *argv[])
 
         method = hash_method_p2sh(pubkey, pubkey_len);
         if (bits == -1) bits = 24;
-    } else {
+    }
+    
+    if (method == NULL) {
         fprintf(stderr, "Option -s <strategy> must be specified. Available strategies are \"p2pk\", \"p2pkh\", \"p2sh\".\n");
         return 1;
     }
@@ -243,15 +249,33 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\nGenerated hash/preimage pairs\n");
     for (int i = 0; i < engine.results_num; i++) {
         result_element res = engine.results[i];
-        fprintf(stderr, "#%d: %s %s\n", i, buftohex(res.hash, res.hash_len), buftohex(res.preimage, res.preimage_len));
+        fprintf(stderr, "#%d: ");
+        fdumphex(stderr, res.hash, res.hash_len);
+        fdumphex(stderr, res.preimage, res.preimage_len);
+        fprintf(stderr, "\n");
+    }
+
+    unsigned char *scripts[engine.results_num];
+    int scripts_len[engine.results_num];
+    for (int i = 0; i < engine.results_num; i++) {
+        int len = hash_method_construct_script(method, NULL, &engine.results[i]);
+        scripts[i] = (unsigned char*) malloc(sizeof(unsigned char) * len);
+        hash_method_construct_script(method, scripts[i], &engine.results[i]);
+        scripts_len[i] = len;
     }
 
     fprintf(stderr, "\nGenerated transaction\n");
-    /*int tx_len = hash_method_construct_script(method, NULL, engine.results, engine.results_num);*/
-    /*unsigned char *tx = (unsigned char*) malloc(sizeof(unsigned char*) * tx_len);*/
-    /*hash_method_construct_script(method, tx, engine.results, engine.results_num);*/
-    /*printf("%s\n", buftohex(tx, tx_len));*/
+    cstring *s = cstr_new_sz(1024);
+    tx_chain_el* head = util_construct_txs(scripts, scripts_len, engine.results_num, bits, data_size, fee);
+    for (tx_chain_el* el = head; el != NULL; el = el->next) {
+        btc_tx *tx = el->tx;
+        cstr_resize(s, 0);
+        btc_tx_serialize(s, tx, false);
 
+        fdumphex(stdout, (unsigned char*) s->str, s->len);
+        fprintf(stdout, "\n");
+
+    }
 
 }
 
