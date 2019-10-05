@@ -142,8 +142,10 @@ void p2pk_ctx_prefixes(void *params, hash_context *ctx, int prefix_bits, unsigne
 
     for (int i = 0; i < BATCH_SIZE; i++) {
         EC_POINT_get_affine_coordinates_GFp(pgroup, points[i], x, NULL, bn_ctx);
-        BN_bn2bin(x, x_bytes);
-        memcpy(prefixes[i], x_bytes, prefix_bytes);
+        int bytes = BN_bn2bin(x, x_bytes);
+
+        memset(prefixes[i], 0, 32-bytes);
+        memcpy(prefixes[i] + (32-bytes), x_bytes, bytes);
     }
 }
 
