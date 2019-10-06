@@ -157,6 +157,11 @@ int main(int argc, char *argv[])
     hash_method *method = hash_method_p2pkh();
     ocl_engine = (hash_engine_ocl*) malloc(sizeof(hash_engine_ocl));
 
+    if (bits > hash_method_max_prefix_bits(method)) {
+        fprintf(stderr, "Prefix too long. Method supports prefix no longer than %d bits.\n", hash_method_max_prefix_bits(method));
+        return 1;
+    }
+
     if (devstr != NULL) {
         hash_engine_ocl_init_from_devstr(ocl_engine, devstr, safe_mode, verify_mode, data, data_size * 8, bits);
     } else {

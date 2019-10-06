@@ -246,6 +246,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    if (bits > hash_method_max_prefix_bits(method)) {
+        fprintf(stderr, "Prefix too long. Method supports prefix no longer than %d bits.\n", hash_method_max_prefix_bits(method));
+        return 1;
+    }
+
     hash_engine engine;
     hash_engine_init(&engine, data, data_size * 8, bits);
     hash_engine_run(&engine, method);
