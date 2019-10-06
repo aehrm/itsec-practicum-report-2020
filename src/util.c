@@ -157,3 +157,40 @@ tx_chain_el* util_construct_txs(unsigned char **scripts, int *scripts_len, int s
 
     return head;
 }
+
+void util_print_results(hash_engine *engine)
+{
+    fprintf(stderr, "Generated hash/preimage pairs\n");
+    for (int i = 0; i < engine->results_num; i++) {
+        result_element res = engine->results[i];
+        fprintf(stderr, "#%d: ");
+        fdumphex(stderr, res.hash, res.hash_len);
+        fdumphex(stderr, res.preimage, res.preimage_len);
+        fprintf(stderr, "\n");
+    }
+
+}
+
+void util_print_txs(hash_engine *engine, hash_method *method, int bits, int data_size, int fee)
+{
+    unsigned char *scripts[engine->results_num];
+    int scripts_len[engine->results_num];
+    for (int i = 0; i < engine->results_num; i++) {
+        int len = hash_method_construct_script(method, NULL, &engine->results[i]);
+        scripts[i] = (unsigned char*) malloc(sizeof(unsigned char) * len);
+        hash_method_construct_script(method, scripts[i], &engine->results[i]);
+        scripts_len[i] = len;
+    }
+
+    fprintf(stderr, "Generated transaction\n");
+    cstring *s = cstr_new_sz(1024);
+    tx_chain_el* head = util_construct_txs(scripts, scripts_len, engine->results_num, bits, data_size, fee);
+    for (tx_chain_el* el = head; el != NULL; el = el->next) {
+        btc_tx *tx = el->tx;
+        cstr_resize(s, 0);
+        btc_tx_serialize(s, tx, false);
+
+        fdumphex(stdout, (unsigned char*) s->str, s->len);
+        fprintf(stdout, "\n");
+    }
+}

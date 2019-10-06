@@ -1,3 +1,5 @@
+#include "util.h"
+#include "hash_method.h"
 #include "hash_engine.h"
 #include "hash_engine_ocl.h"
 
@@ -61,15 +63,11 @@ void usage(const char *name)
 "Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-f <file>|-] [-i <data>]\n"
 "\n"
 "Parameter:\n"
-"-s <strategy>          Use specified Strategy to hide supplied data. One of \"p2pk\", \"p2pkh\",\n"
-"                       \"p2sh\".\n"
-"-X <strategy-option>   Supply additional options to specified strategy. Option string is in the\n"
-"                       form <key>=<value>. Strategy \"p2sh\" is the only one accepting options,\n"
-"                       and requires a 33-byte or 65-byte long public key via -Xpubkey=<hexstr>.\n"
 "-n <prefix-length>     Use prefixes of specified bitlength.\n"
 "-i <data>              Hide following data, interpreted literal.\n"
 "-f <file>|-            Read data to hide from file. If \"-\" was specified, data is read from\n"
-"                       standard input.\n", name);
+"                       standard input.\n"
+"-F <fee>               Use <fee> sat/B as transaction fee.\n", name);
 }
 
 int main(int argc, char *argv[])
@@ -82,6 +80,7 @@ int main(int argc, char *argv[])
     FILE *infile = NULL;
     char *instr = NULL;
     int bits = 24;
+    int fee = 20;
 
     int platformidx = -1;
     int deviceidx = -1;
@@ -95,7 +94,7 @@ int main(int argc, char *argv[])
 
     int opt;
     // TODO VG parameters
-    while ((opt = getopt(argc, argv, ":h?:s:X:i:f:n:")) != -1) {
+    while ((opt = getopt(argc, argv, ":h?:i:f:n:")) != -1) {
         switch (opt) {
             case 's':
                 strategy = optarg;
@@ -124,6 +123,9 @@ int main(int argc, char *argv[])
             case 'n':
                 bits = atoi(optarg);
                 break;
+            case 'F':
+                fee = atoi(optarg);
+                break;
             default:
                 usage(argv[0]);
                 return 1;
@@ -150,8 +152,9 @@ int main(int argc, char *argv[])
         data_size = strlen(instr);
     }
 
-    // TODO implement methods
 
+    // TODO implement methods
+    hash_method *method = hash_method_p2pkh();
     ocl_engine = (hash_engine_ocl*) malloc(sizeof(hash_engine_ocl));
 
     if (devstr != NULL) {
@@ -166,10 +169,8 @@ int main(int argc, char *argv[])
     }
 
     fprintf(stderr, "\n");
-    for (int i = 0; i < ocl_engine->base->results_num; i++) {
-        result_element res = ocl_engine->base->results[i];
-        printf("%s %s\n", res.hash_str, res.preimage_str);
-    }
+    util_print_results(ocl_engine->base);
+    util_print_txs(ocl_engine->base, method, bits, data_size, fee);
 }
 
 int vcp_test_func(vg_exec_context_t *vxcp)
@@ -186,17 +187,13 @@ int vcp_test_func(vg_exec_context_t *vxcp)
         ret = 1;
         rb_tree_remove(ocl_engine->base->rb_tree, node);
 
-        vg_exec_context_consolidate_key(vxcp);
-        char buffer[2];
-        char *hash_str = (char*) malloc((2*20+1) * sizeof (char));
-        for (int i = 0; i < 20; i++) {
-            sprintf(buffer, "%.2X", hash[i]);
-            memcpy(hash_str+2*i, buffer, 2);
-        }
-        hash_str[2*20] = '\0';
+        node->hash_len = 20;
+        node->hash = (unsigned char*) malloc(20 * sizeof(unsigned char));
+        memcpy(node->hash, hash, 20);
 
-        node->hash_str = hash_str;
-        node->preimage_str = BN_bn2hex(EC_KEY_get0_private_key(vxcp->vxc_key));
+        node->preimage = (unsigned char*) malloc(32 * sizeof(unsigned char));
+        node->preimage_len = BN_bn2bin(EC_KEY_get0_private_key(vxcp->vxc_key), node->preimage);
+
         vxcp->vxc_vc->vc_pattern_generation++;
     }
 

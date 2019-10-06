@@ -54,23 +54,6 @@ unsigned char* read_file(FILE *f, int *size)
     return result;
 }
 
-void usage(const char *name)
-{
-    fprintf(stderr,
-"Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-f <file>|-] [-i <data>]\n"
-"\n"
-"Parameter:\n"
-"-s <strategy>          Use specified Strategy to hide supplied data. One of \"p2pk\", \"p2pkh\",\n"
-"                       \"p2sh\".\n"
-"-X <strategy-option>   Supply additional options to specified strategy. Option string is in the\n"
-"                       form <key>=<value>. Strategy \"p2sh\" is the only one accepting options,\n"
-"                       and requires a 33-byte or 65-byte long public key via -Xpubkey=<hexstr>.\n"
-"-n <prefix-length>     Use prefixes of specified bitlength.\n"
-"-i <data>              Hide following data, interpreted literal.\n"
-"-f <file>|-            Read data to hide from file. If \"-\" was specified, data is read from\n"
-"                       standard input.\n", name);
-}
-
 int hash_engine_run(hash_engine *engine, hash_method *method)
 {
     fprintf(stderr, "Starting engine\n");
@@ -79,7 +62,7 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
     unsigned long last_progress = 0;
     double last_print = 0;
     double starttime = omp_get_wtime();
-    # pragma omp parallel
+    /*# pragma omp parallel*/
     {
         fprintf(stderr, "Starting thread %d\n", omp_get_thread_num());
 
@@ -127,6 +110,24 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
     return 1;
 }
 
+void usage(const char *name)
+{
+    fprintf(stderr,
+"Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-F <fee>] [-f <file>|-] [-i <data>]\n"
+"\n"
+"Parameter:\n"
+"-s <strategy>          Use specified Strategy to hide supplied data. One of \"p2pk\", \"p2pkh\",\n"
+"                       \"p2sh\".\n"
+"-X <strategy-option>   Supply additional options to specified strategy. Option string is in the\n"
+"                       form <key>=<value>. Strategy \"p2sh\" is the only one accepting options,\n"
+"                       and requires a 33-byte or 65-byte long public key via -Xpubkey=<hexstr>.\n"
+"-n <prefix-length>     Use prefixes of specified bitlength.\n"
+"-i <data>              Hide following data, interpreted literal.\n"
+"-f <file>|-            Read data to hide from file. If \"-\" was specified, data is read from\n"
+"                       standard input.\n"
+"-F <fee>               Use <fee> sat/B as transaction fee.\n", name);
+}
+
 int main(int argc, char *argv[])
 {
     signal(SIGSEGV, handler);
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
 
 
     int opt;
-    while ((opt = getopt(argc, argv, ":h?:s:X:i:f:n:")) != -1) {
+    while ((opt = getopt(argc, argv, ":h?:s:X:i:f:n:F:")) != -1) {
         switch (opt) {
             case 's':
                 strategy = optarg;
@@ -169,6 +170,9 @@ int main(int argc, char *argv[])
                 break;
             case 'n':
                 bits = atoi(optarg);
+                break;
+            case 'F':
+                fee = atoi(optarg);
                 break;
             default:
                 usage(argv[0]);
@@ -246,36 +250,10 @@ int main(int argc, char *argv[])
     hash_engine_init(&engine, data, data_size * 8, bits);
     hash_engine_run(&engine, method);
 
-    fprintf(stderr, "\nGenerated hash/preimage pairs\n");
-    for (int i = 0; i < engine.results_num; i++) {
-        result_element res = engine.results[i];
-        fprintf(stderr, "#%d: ");
-        fdumphex(stderr, res.hash, res.hash_len);
-        fdumphex(stderr, res.preimage, res.preimage_len);
-        fprintf(stderr, "\n");
-    }
+    fprintf(stderr, "\n");
+    util_print_results(&engine);
+    util_print_txs(&engine, method, bits, data_size, fee);
 
-    unsigned char *scripts[engine.results_num];
-    int scripts_len[engine.results_num];
-    for (int i = 0; i < engine.results_num; i++) {
-        int len = hash_method_construct_script(method, NULL, &engine.results[i]);
-        scripts[i] = (unsigned char*) malloc(sizeof(unsigned char) * len);
-        hash_method_construct_script(method, scripts[i], &engine.results[i]);
-        scripts_len[i] = len;
-    }
-
-    fprintf(stderr, "\nGenerated transaction\n");
-    cstring *s = cstr_new_sz(1024);
-    tx_chain_el* head = util_construct_txs(scripts, scripts_len, engine.results_num, bits, data_size, fee);
-    for (tx_chain_el* el = head; el != NULL; el = el->next) {
-        btc_tx *tx = el->tx;
-        cstr_resize(s, 0);
-        btc_tx_serialize(s, tx, false);
-
-        fdumphex(stdout, (unsigned char*) s->str, s->len);
-        fprintf(stdout, "\n");
-
-    }
 
 }
 

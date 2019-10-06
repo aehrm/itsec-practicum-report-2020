@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include "libbtc/include/btc/tx.h"
+#include "hash_engine.h"
+#include "hash_method.h"
 
 typedef struct tx_chain_el_ {
     btc_tx *tx;
@@ -14,6 +16,8 @@ typedef struct tx_chain_el_ {
 
 void fdumphex(FILE *f, unsigned char *src, int len);
 tx_chain_el* util_construct_txs(unsigned char **scripts, int *scripts_len, int script_num, int prefix_len, int data_len, int fee);
+void util_print_txs(hash_engine *engine, hash_method *method, int bits, int data_size, int fee);
+void util_print_results(hash_engine *engine);
 
 
 #endif
