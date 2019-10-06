@@ -57,15 +57,14 @@ int p2sh_max_bits(void *params)
 
 int p2sh_construct_script(void *params, unsigned char *out, result_element *result)
 {
-    if (out == NULL) return 23;
+    cstring *s = cstr_new_sz(23);
+    btc_script_build_p2sh(s, result->hash);
 
-    out[0] = 0xA9; // OP_HASH160
-    out[1] = 20; // 20 bytes to push
-    memcpy(out+2, result->hash, 20); // pubkey
-    out[22] = 0x87; // OP_EQUAL
-    out += 23;
+    if (out != NULL) {
+        memcpy(out, s->str, s->len);
+    }
 
-    return 23;
+    return s->len;
 }
 
 hash_context* p2sh_ctx_alloc(void *params)

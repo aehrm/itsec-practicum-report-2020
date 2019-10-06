@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <math.h>
 #include <cstring>
+#include "libbtc/include/btc/cstr.h"
+#include "libbtc/include/btc/script.h"
 
 #define BATCH_SIZE 1024
 #define COORD_BYTES 32
@@ -35,14 +37,16 @@ int p2pk_batch_size(void *params)
 
 int p2pk_construct_script(void *params, unsigned char *out, result_element *result)
 {
-    if (out == NULL) return 35;
+    cstring *s = cstr_new_sz(35);
 
-    out[0] = 33; // 33 bytes to push
-    memcpy(out+1, result->hash, 33); // pubkey
-    out[34] = 0xac; // OP_CHECKSIG
-    out += 35;
+    btc_script_append_pushdata(s, result->hash, 33);
+    btc_script_append_op(s, OP_CHECKSIG);
 
-    return 35;
+    if (out != NULL) {
+        memcpy(out, s->str, s->len);
+    }
+
+    return s->len;
 }
 
 hash_context* p2pk_ctx_alloc(void *params)
