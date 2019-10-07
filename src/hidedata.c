@@ -63,7 +63,7 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
     unsigned long last_found = 0;
     double last_print = 0;
     double starttime = omp_get_wtime();
-    /*# pragma omp parallel*/
+    # pragma omp parallel
     {
         fprintf(stderr, "Starting thread %d\n", omp_get_thread_num());
 
@@ -82,15 +82,19 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
         while (rb_tree_size(engine->rb_tree) > 0) {
             hash_context_get_prefixes(method, hash_ctx, prefix_bits, prefixes);
 
-            for (int i = 0; i < batch_size; i++) {
-                result_element *node = hash_engine_search(engine, prefixes[i], prefix_bits);
-                progress++;
+            # pragma omp critical
+            {
+                for (int i = 0; i < batch_size; i++) {
+                    result_element *node = hash_engine_search(engine, prefixes[i], prefix_bits);
+                    progress++;
 
-                if (node != NULL) {
-                    hash_context_write_result(method, hash_ctx, i, node);
-                    hash_context_rekey(method, hash_ctx);
-                    rb_tree_remove(engine->rb_tree, node);
-                    break;
+                    if (node != NULL) {
+                        hash_context_write_result(method, hash_ctx, i, node);
+                        hash_context_rekey(method, hash_ctx);
+
+                        rb_tree_remove(engine->rb_tree, node);
+                        break;
+                    }
                 }
             }
 
