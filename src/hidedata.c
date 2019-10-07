@@ -60,6 +60,7 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
 
     unsigned long progress = 0;
     unsigned long last_progress = 0;
+    unsigned long last_found = 0;
     double last_print = 0;
     double starttime = omp_get_wtime();
     /*# pragma omp parallel*/
@@ -98,11 +99,14 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
 
             double now = omp_get_wtime();
             if (now - last_print > 1) {
+                int found = engine->results_num - rb_tree_size(engine->rb_tree);
                 double delta = now - last_print;
-                double rate = (double) (progress - last_progress)/delta;
-                print_statusline(engine, progress, rate);
+                double hashrate = (double) (progress - last_progress)/delta;
+                double foundrate = (double) (found - last_found)/delta;
+                print_statusline(engine, progress, hashrate, foundrate);
                 last_print = now;
                 last_progress = progress;
+                last_found = found;
             }
         }
     }

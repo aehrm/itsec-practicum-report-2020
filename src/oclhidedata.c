@@ -244,5 +244,5 @@ int vcp_hash160_sort_func(vg_context_t *vcp, void *buf)
 
 void vcp_timing_func(vg_context_t *vcp, double count, unsigned long long rate, unsigned long long total)
 {
-    print_statusline(ocl_engine->base, total, (double) rate);
+    print_statusline(ocl_engine->base, total, (double) rate, 0); // TODO
 }

@@ -71,10 +71,11 @@ void hash_engine_init(hash_engine *engine, unsigned char *data, int data_bits, i
     }
 }
 
-void print_statusline(hash_engine *engine, unsigned long progress, double rate)
+void print_statusline(hash_engine *engine, unsigned long progress, double hashrate, double foundrate)
 {
+    int found = engine->results_num - rb_tree_size(engine->rb_tree);
     unsigned long median = 0;
-    for (int i = 0; i < engine->results_num; i++) {
+    for (int i = 0; i < rb_tree_size(engine->rb_tree); i++) {
         int bits = engine->results[i].prefix_bits;
         unsigned long pow = (((unsigned long) 1) << bits);
         median += log(2) / (log(pow)-log(pow-1));
@@ -85,12 +86,17 @@ void print_statusline(hash_engine *engine, unsigned long progress, double rate)
         remtarget = "90\% percentile";
         median = median / (-log(2)) * (log(0.1));
     }
-    if (progress > median) {
-        remtarget = "99.99\% percentile";
-        median = median / (log(0.1)) * (log(0.0001));
+
+    double rate;
+    double remtime;
+    if (foundrate > 50) {
+        rate = foundrate;
+        remtime = (rb_tree_size(engine->rb_tree))/foundrate;
+    } else {
+        rate = hashrate;
+        remtime = (median - progress)/hashrate;
     }
 
-    double remtime = (median - progress)/rate;
     char const *remunit = "s";
     if (remtime > 60) {
         remtime /= 60;
@@ -105,8 +111,15 @@ void print_statusline(hash_engine *engine, unsigned long progress, double rate)
         }
     }
 
+    char const *rateunit = "Kkeys/sec";
+    rate /= 1000;
+    if (rate > 100) {
+        rateunit = "Mkeys/sec";
+        rate /= 1000;
+    }
 
-    fprintf(stderr, "\r[%.3fMkeys/sec] [%.2f%s until %s] [%d/%d found]", rate/1000000, remtime, remunit, remtarget, engine->results_num - rb_tree_size(engine->rb_tree), engine->results_num);
+
+    fprintf(stderr, "\r[%.3f%s] [%.2f%s until %s] [%d/%d found]", rate, rateunit, remtime, remunit, remtarget, found, engine->results_num);
     fflush(stderr);
 
 }

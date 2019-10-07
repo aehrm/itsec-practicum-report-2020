@@ -24,7 +24,7 @@ typedef struct {
 } hash_engine;
 
 void hash_engine_init(hash_engine *engine, unsigned char *data, int data_bits, int prefix_bits);
-void print_statusline(hash_engine *engine, unsigned long progress, double rate);
+void print_statusline(hash_engine *engine, unsigned long progress, double hashrate, double foundrate);
 result_element* hash_engine_search(hash_engine *engine, unsigned char *prefix, int prefix_bits);
 
 #endif
