@@ -10,7 +10,7 @@ oclhidedata: src/oclhidedata.o src/hash_method.o lib/vanitygen/pattern.o lib/van
 buildtx: src/buildtx.o src/util.o src/rpc.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,-Bstatic -L./lib/libbtc/.libs -lbtc -L./lib/libbtc/src/secp256k1/.libs -lsecp256k1 -L./lib/cjson/ -lcjson -Wl,-Bdynamic -lgmp -lcrypto -lcurl
 
-parsedata: src/parsedata.o lib/rb_tree/rb_tree.o src/util.o
+parsedata: src/parsedata.o lib/rb_tree/rb_tree.o src/util.o src/rpc.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,-Bstatic -L./lib/libbtc/.libs -lbtc -L./lib/libbtc/src/secp256k1/.libs -lsecp256k1 -L./lib/cjson/ -lcjson -Wl,-Bdynamic -lgmp -lcrypto -lcurl
 
 clean:
