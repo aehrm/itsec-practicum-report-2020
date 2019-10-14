@@ -7,7 +7,7 @@
 #include "hash_engine.h"
 
 void fdumphex(FILE *f, unsigned char *src, int len);
-void util_print_results(hash_engine *engine);
+void util_print_results(hash_engine *engine, char* method, int data_len, int prefix_len);
 
 
 #endif

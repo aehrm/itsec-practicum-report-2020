@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
     hash_engine_run(&engine, method);
 
     fprintf(stderr, "\n");
-    util_print_results(&engine);
+    util_print_results(&engine, strategy, data_size, bits);
 
 }
 
