@@ -63,6 +63,7 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
     unsigned long last_found = 0;
     double last_print = 0;
     double starttime = omp_get_wtime();
+    double stop = false;
     # pragma omp parallel
     {
         fprintf(stderr, "Starting thread %d\n", omp_get_thread_num());
@@ -79,7 +80,7 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
         hash_context_rekey(method, hash_ctx);
         hash_context_next_result(method, hash_ctx);
 
-        while (rb_tree_size(engine->rb_tree) > 0) {
+        while (!stop && rb_tree_size(engine->rb_tree) > 0) {
             hash_context_get_prefixes(method, hash_ctx, prefix_bits, prefixes);
 
             # pragma omp critical
@@ -98,8 +99,10 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
                 }
             }
 
-            if (hash_context_next_result(method, hash_ctx) == 0)
+            if (hash_context_next_result(method, hash_ctx) == 0) {
+                stop = true;
                 break; // TODO notify threads
+            }
 
             double now = omp_get_wtime();
             if (now - last_print > 1) {

@@ -169,7 +169,6 @@ int main(int argc, char *argv[])
     }
 
     if (!hash_engine_ocl_run(ocl_engine)) {
-        // TODO report error
         return 1;
     }
 

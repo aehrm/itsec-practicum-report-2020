@@ -40,7 +40,6 @@ void genlink(uint160 scripthash, cstring* linkscriptsig)
 
 int tx_size(btc_tx *tx)
 {
-    // TODO
     cstring *s = cstr_new_sz(1024);
     btc_tx_serialize(s, tx, false);
 
