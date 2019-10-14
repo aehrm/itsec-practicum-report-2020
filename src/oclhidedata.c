@@ -174,7 +174,6 @@ int main(int argc, char *argv[])
 
     fprintf(stderr, "\n");
     util_print_results(ocl_engine->base);
-    util_print_txs(ocl_engine->base, method, bits, data_size, fee);
 }
 
 int vcp_test_func(vg_exec_context_t *vxcp)

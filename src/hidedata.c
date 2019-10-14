@@ -268,8 +268,6 @@ int main(int argc, char *argv[])
 
     fprintf(stderr, "\n");
     util_print_results(&engine);
-    util_print_txs(&engine, method, bits, data_size, fee);
-
 
 }
 

@@ -1,5 +1,4 @@
 #include "hash_method.h"
-#include "util.h"
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
