@@ -35,18 +35,6 @@ int p2pkh_batch_size(void *params)
     return BATCH_SIZE;
 }
 
-int p2pkh_construct_script(void *params, unsigned char *out, result_element *result)
-{
-    cstring *s = cstr_new_sz(25);
-    btc_script_build_p2pkh(s, result->hash);
-
-    if (out != NULL) {
-        memcpy(out, s->str, s->len);
-    }
-
-    return s->len;
-}
-
 hash_context* p2pkh_ctx_alloc(void *params)
 {
     BIGNUM *bn_batch_size = BN_new(); BN_set_word(bn_batch_size, BATCH_SIZE);
@@ -159,7 +147,6 @@ hash_method* hash_method_p2pkh()
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2pkh_max_bits;
     meth->batch_size = &p2pkh_batch_size;
-    meth->construct_script = &p2pkh_construct_script;
     meth->hash_context_alloc = &p2pkh_ctx_alloc;
     meth->hash_context_rekey = &p2pkh_ctx_rekey;
     meth->hash_context_next_result = &p2pkh_ctx_next;

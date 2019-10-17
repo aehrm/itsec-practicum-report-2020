@@ -10,8 +10,6 @@
 #include <unistd.h>
 #include <math.h>
 #include <cstring>
-#include "libbtc/include/btc/cstr.h"
-#include "libbtc/include/btc/script.h"
 
 #define BATCH_SIZE 1024
 #define COORD_BYTES 32
@@ -32,20 +30,6 @@ int p2pk_max_bits(void *params)
 int p2pk_batch_size(void *params)
 {
     return BATCH_SIZE;
-}
-
-int p2pk_construct_script(void *params, unsigned char *out, result_element *result)
-{
-    cstring *s = cstr_new_sz(35);
-
-    btc_script_append_pushdata(s, result->hash, 33);
-    btc_script_append_op(s, OP_CHECKSIG);
-
-    if (out != NULL) {
-        memcpy(out, s->str, s->len);
-    }
-
-    return s->len;
 }
 
 hash_context* p2pk_ctx_alloc(void *params)
@@ -158,7 +142,6 @@ hash_method* hash_method_p2pk()
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2pk_max_bits;
     meth->batch_size = &p2pk_batch_size;
-    meth->construct_script = &p2pk_construct_script;
     meth->hash_context_alloc = &p2pk_ctx_alloc;
     meth->hash_context_rekey = &p2pk_ctx_rekey;
     meth->hash_context_next_result = &p2pk_ctx_next;

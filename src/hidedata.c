@@ -16,8 +16,6 @@
 #include <unistd.h>
 #include <math.h>
 
-#define BUFFER_SIZE 1024
-
 void handler(int sig)
 {
   void *array[10];
@@ -30,28 +28,6 @@ void handler(int sig)
   fprintf(stderr, "Error: signal %d:\n", sig);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
   exit(1);
-}
-
-unsigned char* read_file(FILE *f, int *size)
-{
-    int result_size = 0;
-    unsigned char* result = NULL;
-    unsigned char buffer[BUFFER_SIZE];
-    int read;
-
-    while (!feof(f)) {
-        read = fread(buffer, 1, BUFFER_SIZE, f);
-
-        int new_size = result_size + read;
-        result = (unsigned char*) realloc(result, new_size * sizeof(unsigned int));
-        memcpy(result + result_size, buffer, read);
-        result_size = new_size;
-    }
-
-    fclose(f);
-
-    *size = result_size;
-    return result;
 }
 
 int hash_engine_run(hash_engine *engine, hash_method *method)
@@ -124,7 +100,7 @@ int hash_engine_run(hash_engine *engine, hash_method *method)
 void usage(const char *name)
 {
     fprintf(stderr,
-"Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-F <fee>] [-f <file>|-] [-i <data>]\n"
+"Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-f <file>|-] [-i <data>]\n"
 "\n"
 "Parameter:\n"
 "-s <strategy>          Use specified Strategy to hide supplied data. One of \"p2pk\", \"p2pkh\",\n"
@@ -135,8 +111,7 @@ void usage(const char *name)
 "-n <prefix-length>     Use prefixes of specified bitlength.\n"
 "-i <data>              Hide following data, interpreted literal.\n"
 "-f <file>|-            Read data to hide from file. If \"-\" was specified, data is read from\n"
-"                       standard input.\n"
-"-F <fee>               Use <fee> sat/B as transaction fee.\n", name);
+"                       standard input.\n", name);
 }
 
 int main(int argc, char *argv[])
@@ -149,7 +124,6 @@ int main(int argc, char *argv[])
     FILE *infile = NULL;
     char *instr = NULL;
     int bits = -1;
-    int fee = 20;
 
 
     int opt;
@@ -182,9 +156,6 @@ int main(int argc, char *argv[])
             case 'n':
                 bits = atoi(optarg);
                 break;
-            case 'F':
-                fee = atoi(optarg);
-                break;
             default:
                 usage(argv[0]);
                 return 1;
@@ -205,7 +176,7 @@ int main(int argc, char *argv[])
     int data_size;
 
     if (infile != NULL) {
-        data = read_file(infile, &data_size);
+        data = util_read_file(infile, &data_size);
     } else {
         data = (unsigned char*) instr;
         data_size = strlen(instr);

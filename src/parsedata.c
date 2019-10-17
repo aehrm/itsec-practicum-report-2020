@@ -17,6 +17,12 @@
 #include <unistd.h>
 #include <math.h>
 
+typedef struct tx_chain_el_ {
+    btc_tx *tx;
+    tx_chain_el_ *prev;
+    tx_chain_el_ *next;
+} tx_chain_el;
+
 unsigned char * get_payload(btc_tx_out *out)
 {
     btc_tx_out_type type = btc_script_classify(out->script_pubkey, NULL);

@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
 
 
     // TODO implement methods
+    strategy = "p2pkh";
     hash_method *method = hash_method_p2pkh();
     ocl_engine = (hash_engine_ocl*) malloc(sizeof(hash_engine_ocl));
 
@@ -173,7 +174,7 @@ int main(int argc, char *argv[])
     }
 
     fprintf(stderr, "\n");
-    util_print_results(ocl_engine->base);
+    util_print_results(ocl_engine->base, strategy, data_size, bits);
 }
 
 int vcp_test_func(vg_exec_context_t *vxcp)

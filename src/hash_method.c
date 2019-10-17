@@ -5,7 +5,6 @@ typedef struct {
     void *params;
     int (*max_prefix_bits) (void *params);
     int (*batch_size) (void *params);
-    int (*construct_script) (void *params, unsigned char *out, result_element *result);
     hash_context* (*hash_context_alloc) (void *params);
     void (*hash_context_rekey) (void *params, hash_context *ctx);
     int (*hash_context_next_result) (void *params, hash_context *ctx);
@@ -23,12 +22,6 @@ int hash_method_batch_size(hash_method *meth)
 {
     hash_method_impl *meth_impl = (hash_method_impl*) meth;
     return meth_impl->batch_size(meth_impl->params);
-}
-
-int hash_method_construct_script(hash_method *meth, unsigned char *out, result_element *result)
-{
-    hash_method_impl *meth_impl = (hash_method_impl*) meth;
-    return meth_impl->construct_script(meth_impl->params, out, result);
 }
 
 hash_context* hash_context_alloc(hash_method *meth)

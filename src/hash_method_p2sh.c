@@ -55,18 +55,6 @@ int p2sh_max_bits(void *params)
     return 160;
 }
 
-int p2sh_construct_script(void *params, unsigned char *out, result_element *result)
-{
-    cstring *s = cstr_new_sz(23);
-    btc_script_build_p2sh(s, result->hash);
-
-    if (out != NULL) {
-        memcpy(out, s->str, s->len);
-    }
-
-    return s->len;
-}
-
 hash_context* p2sh_ctx_alloc(void *params)
 {
     unsigned char *pubkey = ((p2sh_params*) params)->pubkey;
@@ -147,7 +135,6 @@ hash_method* hash_method_p2sh(unsigned char *pubkey, int pubkey_len)
 {
     hash_method_impl *meth = (hash_method_impl*) malloc(sizeof (hash_method_impl));
     meth->max_prefix_bits = &p2sh_max_bits;
-    meth->construct_script = &p2sh_construct_script;
     meth->hash_context_alloc = &p2sh_ctx_alloc;
     meth->hash_context_rekey = &p2sh_ctx_rekey;
     meth->hash_context_next_result = &p2sh_ctx_next;
