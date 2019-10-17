@@ -112,3 +112,66 @@ void util_print_results(hash_engine *engine, char *method, int data_len, int pre
     cJSON_Delete(output);
 
 }
+
+void util_read_results(char *in, result_element **results, int *results_num, char **hash_method, int *data_size, int *bits)
+{
+    *results = NULL;
+
+    cJSON *json = cJSON_Parse(in);
+    cJSON *keypair, *keypairs, *method_str, *prefix_len_num, *data_len_num, *metadata;
+    int i;
+
+    if (json == NULL) {
+        fprintf(stderr, "Parse error: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+
+    metadata = cJSON_GetObjectItem(json, "metadata");
+    if (!cJSON_IsObject(metadata)) goto structerr;
+
+    method_str = cJSON_GetObjectItem(metadata, "method");
+    if (!cJSON_IsString(method_str)) goto structerr;
+    *hash_method = strdup(method_str->valuestring);
+
+    data_len_num = cJSON_GetObjectItem(metadata, "data_len");
+    if (!cJSON_IsNumber(data_len_num)) goto structerr;
+    *data_size = data_len_num->valueint;
+
+    prefix_len_num = cJSON_GetObjectItem(metadata, "prefix_len");
+    if (!cJSON_IsNumber(prefix_len_num)) goto structerr;
+    *bits = prefix_len_num->valueint;
+
+    i = 0;
+    keypairs = cJSON_GetObjectItem(json, "keypairs");
+
+    *results_num = cJSON_GetArraySize(keypairs);
+    *results = (result_element *) malloc(sizeof(result_element) * (*results_num));
+
+    cJSON_ArrayForEach(keypair, keypairs)
+    {
+        if (!cJSON_IsArray(keypair)) goto structerr;
+        if (!cJSON_IsString(cJSON_GetArrayItem(keypair, 0))) goto structerr;
+        if (!cJSON_IsString(cJSON_GetArrayItem(keypair, 1))) goto structerr;
+
+        result_element el;
+
+        char * hash_hex = cJSON_GetArrayItem(keypair, 0)->valuestring;
+        el.hash_len = strlen(hash_hex)/2;
+        el.hash = (unsigned char*) malloc(sizeof(unsigned char) * el.hash_len);
+        hextobin(el.hash, hash_hex, strlen(hash_hex));
+
+        char * preimage_hex = cJSON_GetArrayItem(keypair, 1)->valuestring;
+        el.preimage_len = strlen(preimage_hex)/2;
+        el.preimage = (unsigned char*) malloc(sizeof(unsigned char) * el.preimage_len);
+        hextobin(el.preimage, preimage_hex, strlen(preimage_hex));
+
+        (*results)[i++] = el;
+    }
+
+    cJSON_Delete(json);
+    return;
+
+structerr:
+    fprintf(stderr, "Wrong structure in input JSON\n");
+    return;
+}
