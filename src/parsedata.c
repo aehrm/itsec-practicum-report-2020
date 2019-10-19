@@ -97,7 +97,10 @@ int main(int argc, char *argv[])
     for (int i = 0; i < tx_chain_el_list->len; i++) {
         tx_chain_el *el = (tx_chain_el*) vector_idx(tx_chain_el_list, i);
 
-        if (el->tx->vin->len == 0) {
+        // test for header
+        btc_tx_out *metadata = (btc_tx_out*) vector_idx(el->tx->vout, 0);
+        unsigned char *data = (unsigned char*) metadata->script_pubkey->str + 2; // skipping OP_0 and pushdata byte
+        if (metadata->script_pubkey->len >= 17 && memcmp(data, "hidedata", 8) == 0) {
             if (head == NULL) {
                 head = el;
                 continue;
@@ -122,22 +125,19 @@ int main(int argc, char *argv[])
             el->prev = pred;
             pred->next = el;
         } else {
-            fprintf(stderr, "hmm..\n");
-            // TODO notify
+            char *backward_hash_str = bintohex(backward_hash, 32);
+            fprintf(stderr, "tx in line %d references txhash %s, but not found in file, aborting\n", i+1, backward_hash_str);
+            return 1;
         }
     }
 
-    int prefix_bits;
-    int data_len;
-    int tx_num;
+    int prefix_bits = 0;
+    int data_len = 0;
+    int tx_num = 0;
 
     // verify header
     btc_tx_out *metadata = (btc_tx_out*) vector_idx(head->tx->vout, 0);
     unsigned char *data = (unsigned char*) metadata->script_pubkey->str + 2; // skipping OP_0 and pushdata byte
-    if (metadata->script_pubkey->len < 17 || memcmp(data, "hidedata", 8) != 0) {
-        fprintf(stderr, "Nonstandard header, aborting\n");
-        return 1;
-    }
     tx_num |=  data[8] & 0xFF;
     tx_num |= (data[9] & 0xFF) << 8;
     prefix_bits = data[10];
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 
 
     // iterate over tx chain
-    int tx_ctr = 0;
+    int tx_ctr = 1;
     int byte_ctr = 0;
     unsigned char carry = 0;
     int carry_pos = 0;

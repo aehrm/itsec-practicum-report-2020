@@ -39,14 +39,12 @@ void genlink(uint160 scripthash, cstring* linkscriptsig)
     cstr_resize(linkscriptsig, 0);
 
     cstring *script = cstr_new_sz(64);
-    btc_script_append_op(script, OP_RETURN);
-
     RAND_bytes(nonce, 16);
     btc_script_append_pushdata(script, nonce, 16);
+    btc_script_append_op(script, OP_DROP);
+    btc_script_append_op(script, OP_TRUE);
 
     btc_script_get_scripthash(script, scripthash);
-
-    btc_script_append_op(linkscriptsig, OP_0);
     btc_script_append_pushdata(linkscriptsig, (unsigned char*) script->str, script->len);
     
     cstr_free(script, 1);
@@ -55,7 +53,7 @@ void genlink(uint160 scripthash, cstring* linkscriptsig)
 int tx_size(btc_tx *tx)
 {
     cstring *s = cstr_new_sz(1024);
-    btc_tx_serialize(s, tx, false);
+    btc_tx_serialize(s, tx, true);
 
     int len = s->len;
     cstr_free(s, 1);
@@ -168,15 +166,15 @@ int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
     cJSON *out;
 
     cstring *s = cstr_new_sz(1024);
-    btc_tx_serialize(s, head->tx, false);
+    btc_tx_serialize(s, head->tx, true);
     char *hextx = bintohex((unsigned char*) s->str, s->len);
 
     cJSON *fund_params = cJSON_CreateObject();
     cJSON_AddStringToObject(fund_params, "hexstring", hextx);
-    cJSON_AddBoolToObject(fund_params, "iswitness", false);
+    /*cJSON_AddBoolToObject(fund_params, "iswitness", false);*/
 
     cJSON *options = cJSON_AddObjectToObject(fund_params, "options");
-    cJSON_AddNumberToObject(options, "changePosition", 2);
+    cJSON_AddNumberToObject(options, "changePosition", 1);
     cJSON_AddNumberToObject(options, "feeRate", ((float) fee)*1e-5);
     
 
@@ -213,7 +211,7 @@ int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
     // specify outpoints
     for (tx_chain_el *cur = head; cur->next != NULL; cur = cur->next) {
         btc_tx_outpoint outpoint;
-        outpoint.n = cur->tx->vout->len;
+        outpoint.n = cur->tx->vout->len-1;
         btc_tx_hash(cur->tx, outpoint.hash);
         btc_tx_in *linktx = (btc_tx_in*) vector_idx(cur->next->tx->vin, 0);
 
@@ -334,7 +332,7 @@ int main(int argc, char *argv[])
     for (tx_chain_el* el = head; el != NULL; el = el->next) {
         btc_tx *tx = el->tx;
         cstr_resize(s, 0);
-        btc_tx_serialize(s, tx, false);
+        btc_tx_serialize(s, tx, true);
 
         fdumphex(stdout, (unsigned char*) s->str, s->len);
         fprintf(stdout, "\n");

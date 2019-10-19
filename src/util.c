@@ -85,7 +85,7 @@ void util_print_results(hash_engine *engine, char *method, int data_len, int pre
     cJSON *metadata = cJSON_AddObjectToObject(output, "metadata");
     cJSON_AddStringToObject(metadata, "method", method);
     cJSON_AddNumberToObject(metadata, "data_len", data_len);
-    cJSON_AddNumberToObject(metadata, "prefix_len", data_len);
+    cJSON_AddNumberToObject(metadata, "prefix_len", prefix_len);
 
     cJSON *keypairs = cJSON_AddArrayToObject(output, "keypairs");
 
