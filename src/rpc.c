@@ -45,7 +45,6 @@ int rpc_call(char *url, char* method, cJSON *params, cJSON **out)
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writefn);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)response);
 	res = curl_easy_perform(curl);
-    free(postdata);
 
     if(res != CURLE_OK) {
         int len = strlen(errbuf);
@@ -65,8 +64,11 @@ int rpc_call(char *url, char* method, cJSON *params, cJSON **out)
 
     if (response_code != 200) {
         fprintf(stderr, "Response code was %d, expected 200: %s\n", response_code, response->str);
+        fprintf(stderr, "input: %s\n", postdata);
         return 1;
     }
+
+    free(postdata);
 
     // parse response
     /*fprintf(stderr, "%s\n", response->str);*/

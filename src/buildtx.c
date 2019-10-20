@@ -94,7 +94,7 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
 
         if (script_idx < script_num) {
             // add link placeholder
-            vector_add(head->tx->vout, btc_tx_out_new());
+            vector_add(cur->tx->vout, btc_tx_out_new());
             cur->next = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
             cur->next->prev = cur;
             
