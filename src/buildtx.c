@@ -22,6 +22,8 @@
 #include "libbtc/include/btc/cstr.h"
 #include "libbtc/include/btc/vector.h"
 #include "libbtc/include/btc/script.h"
+#include "libbtc/include/btc/random.h"
+#include "libbtc/include/btc/ecc.h"
 
 #include "cjson/cJSON.h"
 
@@ -32,23 +34,6 @@ typedef struct tx_chain_el_ {
     tx_chain_el_ *prev;
     tx_chain_el_ *next;
 } tx_chain_el;
-
-void genlink(uint160 scripthash, cstring* linkscriptsig)
-{
-    unsigned char nonce[16];
-    cstr_resize(linkscriptsig, 0);
-
-    cstring *script = cstr_new_sz(64);
-    RAND_bytes(nonce, 16);
-    btc_script_append_pushdata(script, nonce, 16);
-    btc_script_append_op(script, OP_DROP);
-    btc_script_append_op(script, OP_TRUE);
-
-    btc_script_get_scripthash(script, scripthash);
-    btc_script_append_pushdata(linkscriptsig, (unsigned char*) script->str, script->len);
-    
-    cstr_free(script, 1);
-}
 
 int tx_size(btc_tx *tx)
 {
@@ -64,8 +49,6 @@ int tx_size(btc_tx *tx)
 tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script_num, int prefix_len, int data_len, int fee)
 {
     tx_chain_el *head = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
-    cstring *linkscriptsig = cstr_new_sz(64);
-    uint160 linkscripthash;
 
 
     head->prev = NULL;
@@ -76,9 +59,8 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
     // metadata placeholder
     vector_add(head->tx->vout, btc_tx_out_new());
 
-    // link
-    genlink(linkscripthash, linkscriptsig);
-    btc_tx_add_p2sh_hash160_out(head->tx, 0, linkscripthash);
+    // link placeholder
+    vector_add(head->tx->vout, btc_tx_out_new());
 
     tx_chain_el* cur;
     unsigned int tx_ctr = 1;
@@ -89,14 +71,13 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
         cur = cur->next;
         cur->tx = btc_tx_new();
 
-        // add input
+        // add input placeholder
         btc_tx_in *in = btc_tx_in_new();
-        in->script_sig = cstr_new_cstr(linkscriptsig);
         vector_add(cur->tx->vin, in);
 
         // add data scripts
         btc_tx_out *out;
-        while (script_idx < script_num && tx_size(cur->tx) < 100000) {
+        while (script_idx < script_num && tx_size(cur->tx) < 100000-130) { // keep space for links
             out = btc_tx_out_new();
             out->value = NONDUST;
             out->script_pubkey = cstr_new_buf((const void*)scripts[script_idx], scripts_len[script_idx]);
@@ -105,16 +86,15 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
             vector_add(cur->tx->vout, out);
         }
 
-        if (tx_size(cur->tx) > 100000) {
+        if (tx_size(cur->tx) > 100000-130) {
             // roll back
             vector_remove_idx(cur->tx->vout, cur->tx->vout->len-1);
             script_idx--;
         }
 
         if (script_idx < script_num) {
-            // add link
-            genlink(linkscripthash, linkscriptsig);
-            btc_tx_add_p2sh_hash160_out(cur->tx, 0, linkscripthash);
+            // add link placeholder
+            vector_add(head->tx->vout, btc_tx_out_new());
             cur->next = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
             cur->next->prev = cur;
             
@@ -158,12 +138,61 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
     return head;
 }
 
+int sign_tx_in(tx_chain_el *el, btc_key *privkey, btc_pubkey *pubkey, cstring *redeem_script)
+{
+    btc_tx_in *linktx = (btc_tx_in*) vector_idx(el->tx->vin, 0);
+    btc_tx_out *prevout = (btc_tx_out*) vector_idx(el->prev->tx->vout, el->prev->tx->vout->len-1);
+    linktx->script_sig = cstr_new_sz(64);
+
+    uint256 sighash;
+    memset(sighash, 0, sizeof(sighash));
+    btc_tx_sighash(el->tx, redeem_script, 0, 1, 0, SIGVERSION_BASE, sighash);
+
+    // c.f. lib/libbtc/src/tx.c
+    uint8_t sig[64];
+    size_t siglen = 0;
+    btc_key_sign_hash_compact(privkey, sighash, sig, &siglen);
+    unsigned char sigder_plus_hashtype[74+1];
+    size_t sigderlen = 75;
+    btc_ecc_compact_to_der_normalized(sig, sigder_plus_hashtype, &sigderlen);
+    sigder_plus_hashtype[sigderlen] = 1;
+    sigderlen+=1;
+
+    cstr_resize(linktx->script_sig, 0);
+    btc_script_append_pushdata(linktx->script_sig, (unsigned char*) sigder_plus_hashtype, sigderlen);
+    btc_script_append_pushdata(linktx->script_sig, (unsigned char*) redeem_script->str, redeem_script->len);
+
+    return 0;
+
+}
+
 int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
 {
+    btc_ecc_start();
+    btc_random_init();
+
+    // generate keypair
+    btc_key privkey;
+    btc_privkey_gen(&privkey);
+    btc_pubkey pubkey;
+    btc_pubkey_from_key(&privkey, &pubkey);
+    uint160 pubkeyhash;
+    btc_pubkey_get_hash160(&pubkey, pubkeyhash);
+    cstring *redeem_script = cstr_new_sz(1024);
+    btc_script_append_pushdata(redeem_script, pubkey.pubkey, BTC_ECKEY_COMPRESSED_LENGTH);
+    btc_script_append_op(redeem_script, OP_CHECKSIG);
+    uint160 redeem_script_hash;
+    btc_script_get_scripthash(redeem_script, redeem_script_hash);
+
     int ret;
 
+    // set head output
+    btc_tx_out *tx_out = (btc_tx_out*) vector_idx(head->tx->vout, 1);
+    tx_out->script_pubkey = cstr_new_sz(1024);
+    btc_script_build_p2sh(tx_out->script_pubkey, redeem_script_hash);
+
     // fund head
-    cJSON *out;
+    cJSON *json_out;
 
     cstring *s = cstr_new_sz(1024);
     btc_tx_serialize(s, head->tx, true);
@@ -178,24 +207,24 @@ int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
     cJSON_AddNumberToObject(options, "feeRate", ((float) fee)*1e-5);
     
 
-    ret = rpc_call(rpcurl, "fundrawtransaction", fund_params, &out);
+    ret = rpc_call(rpcurl, "fundrawtransaction", fund_params, &json_out);
     cJSON_Delete(fund_params);
     free(hextx);
 
     if (ret) return 1;
-    hextx = strdup(cJSON_GetObjectItem(out, "hex")->valuestring);
-    cJSON_Delete(out);
+    hextx = strdup(cJSON_GetObjectItem(json_out, "hex")->valuestring);
+    cJSON_Delete(json_out);
 
     cJSON *sign_params = cJSON_CreateObject();
     cJSON_AddStringToObject(sign_params, "hexstring", hextx);
 
-    ret = rpc_call(rpcurl, "signrawtransactionwithwallet", sign_params, &out);
+    ret = rpc_call(rpcurl, "signrawtransactionwithwallet", sign_params, &json_out);
     cJSON_Delete(sign_params);
     free(hextx);
 
     if (ret) return 1;
-    hextx = strdup(cJSON_GetObjectItem(out, "hex")->valuestring);
-    cJSON_Delete(out);
+    hextx = strdup(cJSON_GetObjectItem(json_out, "hex")->valuestring);
+    cJSON_Delete(json_out);
 
 
     int len = strlen(hextx)/2;
@@ -208,14 +237,21 @@ int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
     btc_tx_deserialize(tx_serialized, len, head->tx, NULL, true);
     free(tx_serialized);
 
-    // specify outpoints
-    for (tx_chain_el *cur = head; cur->next != NULL; cur = cur->next) {
+    // specify outpoint, set output script, sign tx input
+    for (tx_chain_el *cur = head->next; cur != NULL; cur = cur->next) {
         btc_tx_outpoint outpoint;
-        outpoint.n = cur->tx->vout->len-1;
-        btc_tx_hash(cur->tx, outpoint.hash);
-        btc_tx_in *linktx = (btc_tx_in*) vector_idx(cur->next->tx->vin, 0);
-
+        outpoint.n = cur->prev->tx->vout->len-1;
+        btc_tx_hash(cur->prev->tx, outpoint.hash);
+        btc_tx_in *linktx = (btc_tx_in*) vector_idx(cur->tx->vin, 0);
         linktx->prevout = outpoint;
+
+        if (cur->next != NULL) {
+            btc_tx_out *curout = (btc_tx_out*) vector_idx(cur->tx->vout, cur->tx->vout->len-1);
+            curout->script_pubkey = cstr_new_sz(1024);
+            btc_script_build_p2sh(curout->script_pubkey, redeem_script_hash);
+        }
+
+        sign_tx_in(cur, &privkey, &pubkey, redeem_script);
     }
 
     return 0;
