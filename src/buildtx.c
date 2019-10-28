@@ -48,19 +48,18 @@ int tx_size(btc_tx *tx)
 
 tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script_num, int prefix_len, int data_len, int fee)
 {
-    tx_chain_el *head = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
 
-
-    head->prev = NULL;
+    tx_chain_el* head = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
+    head->next = NULL;
     head->tx = btc_tx_new();
-    head->next = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
-    head->next->prev = head;
-
+    // link placeholder
+    vector_add(head->tx->vin, btc_tx_in_new());
     // metadata placeholder
     vector_add(head->tx->vout, btc_tx_out_new());
 
-    // link placeholder
-    vector_add(head->tx->vout, btc_tx_out_new());
+    head->prev = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
+    head->prev->next = head;
+
 
     tx_chain_el* cur;
     unsigned int tx_ctr = 1;
@@ -68,12 +67,16 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
 
     cur = head;
     while (true) {
-        cur = cur->next;
+        cur = cur->prev;
         cur->tx = btc_tx_new();
 
         // add input placeholder
-        btc_tx_in *in = btc_tx_in_new();
-        vector_add(cur->tx->vin, in);
+        vector_add(cur->tx->vin, btc_tx_in_new());
+
+        // add link placeholder
+        vector_add(cur->tx->vout, btc_tx_out_new());
+        cur->prev = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
+        cur->prev->next = cur;
 
         // add data scripts
         btc_tx_out *out;
@@ -93,30 +96,18 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
         }
 
         if (script_idx < script_num) {
-            // add link placeholder
-            vector_add(cur->tx->vout, btc_tx_out_new());
-            cur->next = (tx_chain_el*) malloc(sizeof(tx_chain_el*));
-            cur->next->prev = cur;
-            
             tx_ctr++;
         } else {
-            cur->next = NULL;
             break;
         }
     }
 
-    tx_chain_el* tail = cur;
+    tx_chain_el *tail = cur->prev;
+    tail->prev = NULL;
+    tail->tx = btc_tx_new();
 
-    // specify funds
-    int funds = 0;
-    for (cur = tail; cur->prev != NULL; cur = cur->prev) {
-        funds += cur->tx->vout->len * NONDUST;
-        funds += tx_size(cur->tx) * fee;
-
-        btc_tx_out *linktx = (btc_tx_out*) vector_idx(cur->prev->tx->vout, cur->prev->tx->vout->len-1);
-        linktx->value = funds;
-    }
-
+    // link placeholder
+    vector_add(tail->tx->vout, btc_tx_out_new());
 
     // set metadata
     unsigned char data[15];
@@ -135,13 +126,23 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
     btc_script_append_op(metadata->script_pubkey, OP_RETURN);
     btc_script_append_pushdata(metadata->script_pubkey, data, 15);
 
-    return head;
+    // specify funds
+    int funds = 0;
+    for (cur = head; cur->prev != NULL; cur = cur->prev) {
+        funds += cur->tx->vout->len * NONDUST;
+        funds += tx_size(cur->tx) * fee;
+
+        btc_tx_out *linktx = (btc_tx_out*) vector_idx(cur->prev->tx->vout, 0);
+        linktx->value = funds;
+    }
+
+    return tail;
 }
 
 int sign_tx_in(tx_chain_el *el, btc_key *privkey, btc_pubkey *pubkey, cstring *redeem_script)
 {
     btc_tx_in *linktx = (btc_tx_in*) vector_idx(el->tx->vin, 0);
-    btc_tx_out *prevout = (btc_tx_out*) vector_idx(el->prev->tx->vout, el->prev->tx->vout->len-1);
+    btc_tx_out *prevout = (btc_tx_out*) vector_idx(el->prev->tx->vout, 0);
     linktx->script_sig = cstr_new_sz(64);
 
     uint256 sighash;
@@ -166,7 +167,7 @@ int sign_tx_in(tx_chain_el *el, btc_key *privkey, btc_pubkey *pubkey, cstring *r
 
 }
 
-int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
+int sign_tx_chain(tx_chain_el *tail, int fee, char *rpcurl)
 {
     btc_ecc_start();
     btc_random_init();
@@ -186,16 +187,16 @@ int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
 
     int ret;
 
-    // set head output
-    btc_tx_out *tx_out = (btc_tx_out*) vector_idx(head->tx->vout, 1);
+    // set tail output
+    btc_tx_out *tx_out = (btc_tx_out*) vector_idx(tail->tx->vout, 0);
     tx_out->script_pubkey = cstr_new_sz(1024);
     btc_script_build_p2sh(tx_out->script_pubkey, redeem_script_hash);
 
-    // fund head
+    // fund tail
     cJSON *json_out;
 
     cstring *s = cstr_new_sz(1024);
-    btc_tx_serialize(s, head->tx, true);
+    btc_tx_serialize(s, tail->tx, true);
     char *hextx = bintohex((unsigned char*) s->str, s->len);
 
     cJSON *fund_params = cJSON_CreateObject();
@@ -232,21 +233,21 @@ int sign_tx_chain(tx_chain_el *head, int fee, char *rpcurl)
     hextobin(tx_serialized, hextx, strlen(hextx));
     free(hextx);
 
-    btc_tx_free(head->tx);
-    head->tx = btc_tx_new();
-    btc_tx_deserialize(tx_serialized, len, head->tx, NULL, true);
+    btc_tx_free(tail->tx);
+    tail->tx = btc_tx_new();
+    btc_tx_deserialize(tx_serialized, len, tail->tx, NULL, true);
     free(tx_serialized);
 
     // specify outpoint, set output script, sign tx input
-    for (tx_chain_el *cur = head->next; cur != NULL; cur = cur->next) {
+    for (tx_chain_el *cur = tail->next; cur != NULL; cur = cur->next) {
         btc_tx_outpoint outpoint;
-        outpoint.n = cur->prev->tx->vout->len-1;
+        outpoint.n = 0;
         btc_tx_hash(cur->prev->tx, outpoint.hash);
         btc_tx_in *linktx = (btc_tx_in*) vector_idx(cur->tx->vin, 0);
         linktx->prevout = outpoint;
 
         if (cur->next != NULL) {
-            btc_tx_out *curout = (btc_tx_out*) vector_idx(cur->tx->vout, cur->tx->vout->len-1);
+            btc_tx_out *curout = (btc_tx_out*) vector_idx(cur->tx->vout, 0);
             curout->script_pubkey = cstr_new_sz(1024);
             btc_script_build_p2sh(curout->script_pubkey, redeem_script_hash);
         }
@@ -359,13 +360,13 @@ int main(int argc, char *argv[])
     }
 
     cstring *s = cstr_new_sz(1024);
-    tx_chain_el* head = construct_txs(scripts, scripts_len, results_num, bits, data_size, fee);
-    if (sign_tx_chain(head, fee, rpcurl)) {
+    tx_chain_el* tail = construct_txs(scripts, scripts_len, results_num, bits, data_size, fee);
+    if (sign_tx_chain(tail, fee, rpcurl)) {
         return 1;
     }
 
     fprintf(stderr, "Generated transaction\n");
-    for (tx_chain_el* el = head; el != NULL; el = el->next) {
+    for (tx_chain_el *el = tail; el != NULL; el = el->next) {
         btc_tx *tx = el->tx;
         cstr_resize(s, 0);
         btc_tx_serialize(s, tx, true);
