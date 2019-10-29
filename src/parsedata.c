@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 
         tx_chain_el *el = (tx_chain_el*) malloc(sizeof(tx_chain_el));
         el->tx = btc_tx_new();
-        btc_tx_deserialize((unsigned char*) txbuf->str, txbuf->len, el->tx, NULL, false);
+        btc_tx_deserialize((unsigned char*) txbuf->str, txbuf->len, el->tx, NULL, true);
         vector_add(tx_chain_el_list, el);
     }
     fclose(infile);
@@ -97,16 +97,16 @@ int main(int argc, char *argv[])
     for (int i = 0; i < tx_chain_el_list->len; i++) {
         tx_chain_el *el = (tx_chain_el*) vector_idx(tx_chain_el_list, i);
 
-        // test for header
+        // test for metadata
         btc_tx_out *metadata = (btc_tx_out*) vector_idx(el->tx->vout, 0);
         unsigned char *data = (unsigned char*) metadata->script_pubkey->str + 2; // skipping OP_0 and pushdata byte
         if (metadata->script_pubkey->len >= 17 && memcmp(data, "hidedata", 8) == 0) {
             if (head == NULL) {
                 head = el;
-                continue;
+                /*continue;*/
             } else {
                 // more than one head? Hmm
-                fprintf(stderr, "More than one head in tx chain found, aborting\n");
+                fprintf(stderr, "More than one metadata tx in tx chain found, aborting\n");
                 return 1;
             }
         }
@@ -124,10 +124,6 @@ int main(int argc, char *argv[])
         if (pred != NULL) {
             el->prev = pred;
             pred->next = el;
-        } else {
-            char *backward_hash_str = bintohex(backward_hash, 32);
-            fprintf(stderr, "tx in line %d references txhash %s, but not found in file, aborting\n", i+1, backward_hash_str);
-            return 1;
         }
     }
 
@@ -135,7 +131,7 @@ int main(int argc, char *argv[])
     int data_len = 0;
     int tx_num = 0;
 
-    // verify header
+    // verify metadata
     btc_tx_out *metadata = (btc_tx_out*) vector_idx(head->tx->vout, 0);
     unsigned char *data = (unsigned char*) metadata->script_pubkey->str + 2; // skipping OP_0 and pushdata byte
     tx_num |=  data[8] & 0xFF;
@@ -154,12 +150,11 @@ int main(int argc, char *argv[])
     int byte_ctr = 0;
     unsigned char carry = 0;
     int carry_pos = 0;
-    for (tx_chain_el *cur = head->next; cur != NULL && tx_ctr <= tx_num; cur = cur->next) {
+    for (tx_chain_el *cur = head->prev; cur != NULL && tx_ctr <= tx_num; cur = cur->prev) {
         tx_ctr++;
         int outnum = cur->tx->vout->len;
-        if (cur->next != NULL) outnum--; // i.e. last output is link
 
-        for (int i = 0; i < outnum; i++) {
+        for (int i = 1; i < outnum; i++) { // first output is link
             unsigned char *payload = get_payload((btc_tx_out*) vector_idx(cur->tx->vout, i));
 
             for (int byte = 0; byte*8 < prefix_bits; byte++) {
