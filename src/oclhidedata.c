@@ -60,14 +60,13 @@ unsigned char* read_file(FILE *f, int *size)
 void usage(const char *name)
 {
     fprintf(stderr,
-"Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-f <file>|-] [-i <data>]\n"
+"Usage: %s [-X <strategy-option>] [-n <prefix-length>] [-f <file>|-] [-i <data>]\n"
 "\n"
 "Parameter:\n"
 "-n <prefix-length>     Use prefixes of specified bitlength.\n"
 "-i <data>              Hide following data, interpreted literal.\n"
 "-f <file>|-            Read data to hide from file. If \"-\" was specified, data is read from\n"
 "                       standard input.\n"
-"-F <fee>               Use <fee> sat/B as transaction fee.\n", name);
 }
 
 int main(int argc, char *argv[])
@@ -161,6 +160,11 @@ int main(int argc, char *argv[])
     if (bits > hash_method_max_prefix_bits(method)) {
         fprintf(stderr, "Prefix too long. Method supports prefix no longer than %d bits.\n", hash_method_max_prefix_bits(method));
         return 1;
+    }
+
+    if (bits < 24) {
+        fprintf(stderr, "warning: short prefix; better match throughput\n")
+        fprintf(stderr, "is possible using hidedata on the CPU\n")
     }
 
     if (devstr != NULL) {
