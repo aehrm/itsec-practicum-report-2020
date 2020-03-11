@@ -7,9 +7,10 @@
 \usepackage{polyglossia}
 \setdefaultlanguage{english}
 
-\usepackage{booktabs}
+\usepackage{booktabs,makecell}
 \usepackage[binary-units=true]{siunitx}
 \usepackage{csquotes}
+\usepackage[labelfont=bf]{caption}
 \usepackage{enumitem}
 \setlist{itemsep=0.3ex}
 \setlist[enumerate]{label = (\alph*)}
@@ -26,6 +27,7 @@
 
 \begin{document}
 
+\raggedbottom
 \maketitle
 \begin{abstract}
 \end{abstract}
@@ -38,13 +40,53 @@
 % P2SH-method uses non-standard script and is not suited for analysis(?)
 % required unlocking input however provably is a  public key
 
+% P2MS??
+
 \section{Approach}
 
-\section{Increased difficulty of data inclusion}
+\begin{table*}
+    \centering
+    \begin{tabular}{lrrrS[table-format=2.2,table-alignment=right]}
+        \toprule
+        & script size & max. payload & max. outputs & {bytes}\cr
+        Type & in byte & in byte & per tx &  {per output}\cr
+        \midrule
+        P2PK & 35 & 32 & 2267 & 44.10\cr
+        P2MS & 105 & 96 & 2625 & 38.09\rlap{*}\cr
+        P2PKH & 25 & 20 & 2934 & 34.08\cr
+        P2SH & 23 & 20 & 3117 & 32.08\cr
+        \midrule
+    \end{tabular}
+    % Key prefix ignored
+    % TODO explain P2MS; omit script size/payload size?
+\end{table*}
+
+\section{Increased cost of data inclusion}
 
 % TODO intros
 
 \subsection{Modelling inclusion cost}
+
+\begin{table*}[t]
+    \centering
+    \begin{tabular}{llr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.1e-2,table-number-alignment=right]r}
+        \toprule
+        \textbf{Method} & \textbf{Hardware} & \multicolumn{1}{r}{\textbf{est. wattage}} &\multicolumn{2}{r}{\textbf{est. freq.}} & \multicolumn{1}{r}{\textbf{$c$ in USD}} & \textbf{ref.}\cr
+        %\midrule
+        % TODO personal measures
+        \midrule
+        P2PKH & AMD RX 480  & 225 & 60 & \si{\mega\hertz} & 1.4e-13 &  Aug. 2016\cr %https://en.bitcoin.it/w/index.php?title=Vanitygen&type=revision&diff=61424&oldid=58554
+              & GTX 1060  & 120 & 40 & \si{\mega\hertz} & 1.1e-13 &  Mar. 2018\cr
+              & GTX 1080 TI  & 250 & 100 & \si{\mega\hertz} & 9.0e-14 &  Feb. 2019\cr
+        \midrule
+        P2SH & GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.8e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
+        & GTX 2080 TI & 280 & 3800 & \si{\mega\hertz} & 2.7e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
+        \bottomrule
+    \end{tabular}
+    % TODO
+    \caption{User's reports of their brute-force frequencies for \emph{Vanitygen} on specific hardware. We estimate cost parameter $c$ for the {P2PKH} by first researching estimated power consumption of the hardware under full load, and assuming energy cost of \num{.13} USD per \si{\kilo\watt\hour}.}
+    \label{table:cost}
+\end{table*}
 
 Essentially, the choice of a suitable prefix length is a trade-off:
 On the one hand, the number of required keypairs, and hence needed transaction fees, are inversely proportional to the chosen prefix length;
@@ -64,7 +106,7 @@ From this, total cost $C$ of an inclusion can be given with
 To precicely determine random variable $X$, we remind ourselves of the general iterative procedure of the brute-force algorithm:
 In each iteration, the algorithm determines a keypair such that its prefix matches one of the payload fragments not yet assigned a keypair, and then assigns that fragment the keypair.
 That is, in iteration $i$, the algorithm chooses private keys randomly, until generated public key paritially collides with one of the $p-i$ remaining unassigned payload fragments.
-Under the worst case, all fragments are pairwise different%
+In the worst case, all fragments are pairwise different%
 %\footnote{This is to be expected for sufficiently large prefix length $n$:}%
 , hence one iteration can be viewed as repeated independent Bernoulli trials until success (i.e.\@ partial collision found), with success probability $(p-i)/2^n$.  
 Refering to required hashes in iteration $i$ with $X_i$, we thus observe that the random variable $X_i$ follows a geometric distribution with parameter $(p-i)/2^n$.
@@ -75,46 +117,39 @@ and conclude for the expected total cost $C$
     E[C] = \frac{2c2^{n}}{p^2+p} + fp.\label{eq:totalcost}
 \end{equation}
 
-Figure \ref{fig:xxx} plots the expected total cost with respect to chosen prefix length, using $N=\SI{1000}{\byte}$, and sensible values for $f$, $c$, assuming the {P2PK} method (cf. next section).
-We can clearly observe a minimum value, the inverse proportionality in bit ranges left of highlighted minimum value, and the exponential growth right of the minimum value.
+%Figure \ref{fig:xxx} plots the expected total cost with respect to chosen prefix length, using $N=\SI{1000}{\byte}$, and sensible values for $f$, $c$, assuming the {P2PK} method (cf. next section).
+%We can clearly observe a minimum value, the inverse proportionality in bit ranges left of highlighted minimum value, and the exponential growth right of the minimum value.
 
 \subsection{Estimation of parameters}
 
 % TODO intros
 
-The software introduced in previous section was used to measure values for $c$, separately for each inclusion method ({P2PK, P2PKH, P2SH}).
-% TODO Hardware
-Additionally, we can give further estimates for cost $c$ indirectly for the inclusion method {P2PKH} and {P2SH}.
+%The software introduced in previous section was used to measure values for $c$, separately for each inclusion method ({P2PK, P2PKH, P2SH}).
+%% TODO Hardware
+%Additionally, we can give further estimates for cost $c$ indirectly for the inclusion method {P2PKH} and {P2SH}.
 
-\paragraph{Estimation using \emph{Vanitygen}}
+Before we can determine the cost increasse caused by the proposed countermeasure, we need to give sensible estimations for the cost parameters $c$ and $f$ involved in the previously stated cost model (\ref{eq:totalcost}).
+While fees $f$ for an transaction output are directly determined by the miners' fee rate, hashing cost depends on the efficiency of the hardware used for the brute-force process.
+For this, we estimate the paramter indirectly using hash-rates reported by users of the tools \emph{Vanitygen} and \emph{Hashcat}.
+Since the P2PK method turns out to be the least effective, the omit an estimation of $c$ for this method.
+
+\paragraph{Transaction fees}
+The fees required for publishing the outputs into the blockchain, i.e. parameter $f$, can easily estimated using the previously calculated average bytes required for a transaction output, as stated in table \ref{table:}.
+Multiplying with miner's transaction fees, and adding smallest non-dust output amount yields the value for paramter $f$.
+Table \ref{table:} gives this parameter numerically for all three methods, using transaction fees at point of publication.
+We further observe that the P2PK/P2MS methods are the least efficient method in this regard, therefore we focus on the two remaining methods P2PKH and P2SH when estimating brute-force computation cost.
+
+\paragraph{P2PKH hash cost estimation}
 For the {P2PKH} method, we can additionally rely on user reports on their performance using the tool \emph{Vanitygen}, which allows users to create vanity addresses.
 These Bitcoin addresses contain a human-readable prefix in their Base-58 representation.
 Similiarly to the presented tool in previous section, \emph{Vanitygen} brute-forces private keys, until the hashed public key has the desired prefix;
 this public key hash is preciely the one used to create {P2PKH} outputs.
 
-Hence, due to the computational similarity, it seems reasonable to estimate possible computational cost for the {P2PKH} method from reported key frequencies of \emph{Vanitygen} on selected hardware.
+Hence, due to the computational similarity, it seems reasonable to estimate possible computational cost for the {P2PKH} method from reported frequencies of \emph{Vanitygen} on selected hardware.
 In fact, the \emph{OpenCL} code used for the (usually faster performing) GPU code direcly builds on top of the one used in \emph{Vanitygen}.
-Table \ref{table:vanitygen} gives estimations for cost $c$ bases on selected user reports.
-% TODO comparison
+Table \ref{table:cost} gives estimations for cost $c$ bases on selected user reports.
 
-\begin{table*}
-    \centering
-    \begin{tabular}{lr<{\,\si{\watt}}r<{\,\si{\mega\hertz}}S[table-format=2.1e2]r}
-        \toprule
-        Hardware & \multicolumn{1}{r}{est. wattage} &\multicolumn{1}{r}{reported freq.} & \multicolumn{1}{r}{$c$ in USD} & ref.\cr
-        %\midrule
-        % TODO personal measures
-        \midrule
-        AMD RX 480  & 225 & 60 & 1.4e-13 &  Aug. 2016\cr %https://en.bitcoin.it/w/index.php?title=Vanitygen&type=revision&diff=61424&oldid=58554
-        GTX 1060  & 120 & 40 & 1.1e-13 &  Mar. 2018\cr
-        GTX 1080 TI  & 250 & 100 & 9.0e-14 &  Feb. 2019\cr
-        \bottomrule
-    \end{tabular}
-    \caption{User's reports of their brute-force frequencies for \emph{Vanitygen} on specific hardware. We estimate cost parameter $c$ for the {P2PKH} by first researching estimated power consumption of the hardware under full load, and assuming energy cost of \mbox{\SI{0.13}{\$/\kilo\watt\hour}}.}
-    \label{table:vanitygen}
-\end{table*}
-
-\paragraph{Estimation based on password crackers}
+\paragraph{P2SH hash cost estimation}
 In a similar matter, one can use the performances in computing {SHA256} digests as estimation for the cost of the {P2SH} method.
 %
 %In a similar matter, one can use Bitcoin mining hardware as comparison for cost of the {P2SH} method.
@@ -131,50 +166,37 @@ The primitive hash functions {RIPEMD160} and {SHA256} are highly similar in arch
 Therefore, the effort required in above procedure (\ref{eq:p2sh-hash}) can be considered twice as large as one {SHA256} digest computation (in the sense of input length $\leq\!\SI{512}{\bit}$). 
 
 % hashcat
+Likewise to previous estimation using \emph{Vanitygen}, we can use hash frequencies published by users of the password cracking tool \emph{Hashcat}.
+Dividing the reported SHA256 hash frequency by factor 2 thus yields an approximate frequency accomplishable for the P2SH brute-force procedure.
+(We tacitly assume that the GPU can be programmed to perform RIPEMD160 calculations in similar speed.)
+Again, refer to table \ref{table:cost} for estimations on cost $c$ bases on selected user reports.
+Both the P2PKH and the P2SH method perform the same hash operations, only the former has to additionally perform a elliptic-curve addition.
 
-% TODO move to sec. 5
+Comparing the two methods, we can already observe that elliptic-curve arithmetics involved in the P2PK(H)/P2MS method heavily dominates the brute-force process.
+We therefore omit a precise cost estimation of the P2PK/P2MS method, and can assume that savings made by omitting the RIPEMD160/SHA256 operations (in comparision to the P2PKH method) are neglegible.
 
-Only as a theoretical consideration, we can build an additional estimation on the basis of Bitcoin mining hardware.
-The emergence of mining hardware developed using application-specific integrated circuits (ASIC) proved that SHA-256 hashes can be computed with an efficiency magnitudes better than traditional GPU-based methods.
-Nevertheless, reliable numbers for the efficiency of such ASIC units seem to only appear in the context of Bitcoin mining, therefore, we focus on such mining hardware.
-It has to be emphasized that the advertized strong computation power of such ASIC units cannot directly be utilized for the task of performing the P2SH computation (\ref{eq:p2sh-hash}), and the determined numbers only serve as an indirect estimation of the theoretical efficiency permitted by application-specific integrated circuits.
-
-In comparison to the P2SH hash procedure (\ref{eq:p2sh-hash}), Proof-of-Work mining constructs from nonce candidate $x$ the 80-byte long block header $H(x)$, and performs a double SHA-256 hashing, i.e. 
-\begin{equation}
-    x \mapsto \text{{SHA256}}(\text{{SHA256}}(H(x))),\label{eq:pow-hash}
-\end{equation}
-to test against network target.
-
-
-% TODO
-This conclusion is not immediate due to following apparent caveat: block headers $H(x)$ are substantially longer than redeem scripts $S(x)$.
-As the former input is split into two 512-bit blocks during hasing, computation requires two invocations of the respective {SHA256} compression function in the Merkle–Damgård transform.
-However, the first 512 bits of input $H(x)$ remain constant with respect to chosen nonce $x$, and in general, during mining, the \enquote*{mid-state} after applying the first compression is precomputed and stored.
-Hence, computations of $\text{{SHA256}}(S(x))$ and $\text{{SHA256}}(H(x))$ both require only a single invocation of the compression function.
-% https://link.springer.com/chapter/10.1007/978-3-662-44893-9_12
-
-% TODO mining process
-%ASIC mining hardware manufacturers provide performance measures for their advertised hardware, 
-
-\begin{table*}
+\subsection{Comparison with state-of-the-art methods}
+This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
+Therefore, we summarize the results of previous chapter in table \ref{table:}, giving rough but sensible estimates for inclusion method P2PKH and P2SH.
+Paramter $f$ is based on network's transaction fee of \num{7.9e-4} USD (10 satoshis) per byte at point of publication, and minimum non-dust amount of 546 satoshis, that is \num{4.3e-2} USD.
+\begin{table}[h]
     \centering
-    \begin{tabular}{lr<{\,\si{\watt}}S[table-number-alignment=right,table-column-width=1.4cm]@{}rS[table-format=1.1e2]r}
+    \sisetup{table-format=1.1e-2,table-number-alignment=right}
+    \begin{tabular}{lSS}
         \toprule
-        Hardware & \multicolumn{1}{r}{est. wattage} &\multicolumn{2}{r}{reported freq.} & \multicolumn{1}{r}{$c$ in USD} & ref.\cr
+        \textbf{Method} & {\textbf{$c$ in USD}} & {\textbf{$f$ in USD}}\cr
         \midrule
-        GTX 1080 TI & 250 & 2.4 & \si{\giga\hertz} & 3.8e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
-        GTX 2080 TI & 280 & 3.8 & \si{\giga\hertz} & 2.7e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
-        %\midrule
-        %Antminer S9* & 1375 & 14 & \si{\tera\hertz} & 3.5e-18 &\cr
-        %Ebit E10* & 1620 & 18 & \si{\tera\hertz} & 3.2e-18 & \cr % https://en.bitcoin.it/wiki/Mining_hardware_comparison
+        P2PKH & 1.0e-13 & 7.0e-2\cr
+        P2SH &  3.3e-15 & 6.8e-2\cr
         \bottomrule
     \end{tabular}
-    \caption{}
-    \label{table:sha256}
-\end{table*}
+\end{table}
 
-\subsection{Analytical considerations}
+The traditional method of including data into the blockchain using fake public key hashes resp. fake script hashes can be computed by same formula (\ref{eq:totalcost}) using identical paramter $f$, but assigning $c=0$ and the maximum possible prefix length ($n=32$ resp. $n=20$ for fake pubkeys resp. fake script hashes)
+
+\section{Analytical considerations}
 % TODO attacker model
+% TODO motivation
 
 \dots
 
@@ -198,6 +220,8 @@ Assuming $W\in \mathcal{O}(\log)$, we observe
     \item halvening the computation cost allows for a constant number of additional payload bits to be included, having same fixed budget; $1/r(n^*) \in \mathcal{O}(-\log(c))$;
     \item even though total cost $N\cdot r(n^*)$ of data is asymtotically sublinear in $\mathcal{O}(N / \log(N))$, for any reasonable quantity $N$ total cost grows effectively linear.
 \end{enumerate}
+%We discuss the consequences of these findings in the last chapter.
+% TODO cost increase w.r.t. to the environment variables (exponential growth of efficiency)
 
 \section{Cost of malicious attack}
 
@@ -210,8 +234,29 @@ Since Bitcoin's concensus mechanism is the basis for its security, we assume a c
 Therefore, we evaluate the cost of such an attack including malicious content \emph{in terms of computational power}.
 Moreover, it seems adequate to measure the required computational power \emph{relative to the concensus attack}.
 
+% \paragraph{} TODO
 As we have already seen, data inclusion using {P2SH} outputs via brute-forcing many redeem scripts is the computationally least expensive method.
-To compare the computational cost to Bitcoin's mining process, we again rely on the previously stated assumption, that the expense of  hashing a single {P2SH} transaction is not greater than hashing a single block during the Proof-of-Work mining process.
+To compare the computational cost to Bitcoin's mining process, we argue that the expense of hashing a single {P2SH} transaction is comparable to hashing a single block header during the Proof-of-Work mining process.
+
+% TODO
+
+%Only as a theoretical consideration, we can build an additional estimation on the basis of Bitcoin mining hardware.
+%The emergence of mining hardware developed using application-specific integrated circuits (ASIC) proved that SHA-256 hashes can be computed with an efficiency magnitudes better than traditional GPU-based methods.
+%Nevertheless, reliable numbers for the efficiency of such ASIC units seem to only appear in the context of Bitcoin mining, therefore, we focus on such mining hardware.
+%It has to be emphasized that the advertized strong computation power of such ASIC units cannot directly be utilized for the task of performing the P2SH computation (\ref{eq:p2sh-hash}), and the determined numbers only serve as an indirect estimation of the theoretical efficiency permitted by application-specific integrated circuits.
+
+In comparison to the P2SH hash procedure (\ref{eq:p2sh-hash}), Proof-of-Work mining constructs from nonce candidate $x$ the 80-byte long block header $H(x)$, and performs a double SHA-256 hashing, i.e. 
+\begin{equation}
+    x \mapsto \text{{SHA256}}(\text{{SHA256}}(H(x))),\label{eq:pow-hash}
+\end{equation}
+to test against network target.
+We alread argued in section \ref{sec:parameter-estimation} that P2SH hashing (\ref{eq:p2sh-hash}) requires computational work comparable to two SHA256 calculations; from above construction (\ref{eq:pow-hash}) follows the stated claim that computing a P2SH hash is approximately as hard as computing a Proof-of-Work hash.
+
+This conclusion is not immediate due to following apparent caveat: block headers $H(x)$ are substantially longer than redeem scripts $S(x)$.
+As the former input is split into two 512-bit blocks for hashing, computation requires two invocations of the respective {SHA256} compression function in the Merkle–Damgård transform.
+However, the first 512 bits of input $H(x)$ remain constant with respect to chosen nonce $x$, and in general, during mining, the \enquote*{mid-state} after applying the first compression is precomputed and stored.
+Hence, computations of $\text{{SHA256}}(S(x))$ and $\text{{SHA256}}(H(x))$ both require only a single invocation of the compression function.
+% https://link.springer.com/chapter/10.1007/978-3-662-44893-9_12
 
 % TODO argue for bandwith limit imposed by block frequency (1 TX per block = 3117 outputs per block = 3117*n bits per 10 minutes)
 
@@ -237,5 +282,7 @@ To compare the computational cost to Bitcoin's mining process, we again rely on 
 \end{table*}
 
 \section{Discussion and Conclusion}
+
+% https://link.springer.com/article/10.1007/s11227-018-2317-6
 
 \end{document}
