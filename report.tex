@@ -48,11 +48,11 @@
     \centering
     \begin{tabular}{lrrrS[table-format=2.2,table-alignment=right]}
         \toprule
-        & script size & max. payload & max. outputs & {bytes}\cr
+        & script size & max. payload & max. outputs & {tx bytes}\cr
         Type & in byte & in byte & per tx &  {per output}\cr
         \midrule
         P2PK & 35 & 32 & 2267 & 44.10\cr
-        P2MS & 105 & 96 & 2625 & 38.09\rlap{*}\cr
+        P2MS & 105 & $3\cdot 32$ & 875 & 38.09\rlap{*}\cr
         P2PKH & 25 & 20 & 2934 & 34.08\cr
         P2SH & 23 & 20 & 3117 & 32.08\cr
         \midrule
@@ -111,10 +111,10 @@ In the worst case, all fragments are pairwise different%
 , hence one iteration can be viewed as repeated independent Bernoulli trials until success (i.e.\@ partial collision found), with success probability $(p-i)/2^n$.  
 Refering to required hashes in iteration $i$ with $X_i$, we thus observe that the random variable $X_i$ follows a geometric distribution with parameter $(p-i)/2^n$.
 For the total number of required hash operations $X$, we reach
-\[ X = \sum_{i=1}^{p} X_i, \quad E[X] = \sum_{i=1}^{p} E[X_i] = \sum_{i=1}^{p}\frac{2^n}{i} = \frac{2\cdot 2^{n}}{p^2+p}, \]
+\[ X = \sum_{i=1}^{p} X_i, \quad E[X] = \sum_{i=1}^{p} E[X_i] = \sum_{i=1}^{p}\frac{2^n}{i} = 2^n\, H_p, \]
 and conclude for the expected total cost $C$
 \begin{equation}
-    E[C] = \frac{2c2^{n}}{p^2+p} + fp.\label{eq:totalcost}
+    E[C] = 2^n\, H_p\,c + fp.\label{eq:totalcost}
 \end{equation}
 
 %Figure \ref{fig:xxx} plots the expected total cost with respect to chosen prefix length, using $N=\SI{1000}{\byte}$, and sensible values for $f$, $c$, assuming the {P2PK} method (cf. next section).
@@ -177,8 +177,8 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and can ass
 
 \subsection{Comparison with state-of-the-art methods}
 This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
-Therefore, we summarize the results of previous chapter in table \ref{table:}, giving rough but sensible estimates for inclusion method P2PKH and P2SH.
-Paramter $f$ is based on network's transaction fee of \num{7.9e-4} USD (10 satoshis) per byte at point of publication, and minimum non-dust amount of 546 satoshis, that is \num{4.3e-2} USD.
+To begin with, we summarize the results of previous chapter in table \ref{table:}, giving rough but sensible estimates for inclusion method P2PKH and P2SH.
+Paramter $f$ is based on network's transaction fee of \num{7.9e-4} USD (10 sat) per byte at point of publication, and minimum non-dust amount of \num{4.3e-2} USD (546 sat).
 \begin{table}[h]
     \centering
     \sisetup{table-format=1.1e-2,table-number-alignment=right}
@@ -192,34 +192,42 @@ Paramter $f$ is based on network's transaction fee of \num{7.9e-4} USD (10 satos
     \end{tabular}
 \end{table}
 
-The traditional method of including data into the blockchain using fake public key hashes resp. fake script hashes can be computed by same formula (\ref{eq:totalcost}) using identical paramter $f$, but assigning $c=0$ and the maximum possible prefix length ($n=32$ resp. $n=20$ for fake pubkeys resp. fake script hashes)
+As was given in the introduction, the best present method of including arbitrary data uses fake public keys (in their extended 65 byte presentation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures.
+Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{1560}{\bit}$, and computing $f$ identically to previous procedure, considering \SI{210.48}{\byte} per output.
+This gives us a constant cost efficiency of \num{1.07e-3} USD per byte as benchmark.
+%at most 475 outputs (carrying \SI{195}{\byte} of payload) can be embedded in a single transaction, yielding a cost efficiency of \num{1.07e-3} USD per byte, using same network's transaction fee and non-dust amount.
+
+Figure \ref{fig:plot} plots the expected cost per byte payload, using $N=\SI{1000}{\byte}$ and the paramters given in table \ref{table:}, for each method.
+As comparison, the constant relative cost of the state-of-the-art method is highlighted by the dashed horizontal line.
+
 
 \section{Analytical considerations}
 % TODO attacker model
 % TODO motivation
 
-\dots
+% TODO wrong differentiation
+%\dots
 
-First, we formulate $r(n)$ as the expected relative cost \emph{per bit payload} with respect to prefix length $n$ from above equation (\ref{eq:totalcost}), fixing parameters $N$, $c$, $f$, and consider the continuation $r\colon \mathbb{R}_+ \to \mathbb{R}$ onto the reals, that is
-\[ 
-    r(n) = \left(\frac{2c2^{n}}{p^2+p} + fp\right)/N = \frac{2c 2^{n} n^2}{N^2 (N+n)}+\frac{f}{n}. 
-\]
-Thus function $r$ constitutes a continuous real-valued function, and we can find optimal $n^*$ yielding minimum cost per bit payload using usual derivative test.
-Since $N\gg n\gg 2$, we approximate
-\begin{align*}
-    \frac{\partial}{\partial n} r(n)   &\approx \frac{\partial}{\partial n} \left( \frac{2c 2^{n} n^2}{N^3}+\frac{f}{n} \right)\\
-                                         &= \frac{2c 2^{n} n (n \log (2)+2)}{N^3}-\frac{f}{n^2}\\
-                                         &\approx \left(\frac{2 \log (2)\,c}{N^3}\right) 2^{n} n^2 -\frac{f}{n^{2}}.
-\end{align*}
-Solving for $\partial/\partial n\, r(n^*)=0$, we get minimum cost at $n=n^*$, that is, with $\alpha, \beta \ll 1$ constants, $W$ the \emph{Lambert $W$ function},
-\[ r(n^*) \approx f/n^* = \frac{\alpha\cdot f}{W\left(\beta\cdot\sqrt[4]{f N^3/c}\right)}. \]
-is the approximative optimal relative cost, depending on $f$, $N$, $c$.
-Assuming $W\in \mathcal{O}(\log)$, we observe
-\begin{enumerate}
-    \item relative cost is effectively linear with respect to transaction fee $f$,
-    \item halvening the computation cost allows for a constant number of additional payload bits to be included, having same fixed budget; $1/r(n^*) \in \mathcal{O}(-\log(c))$;
-    \item even though total cost $N\cdot r(n^*)$ of data is asymtotically sublinear in $\mathcal{O}(N / \log(N))$, for any reasonable quantity $N$ total cost grows effectively linear.
-\end{enumerate}
+%First, we formulate $r(n)$ as the expected relative cost \emph{per bit payload} with respect to prefix length $n$ from above equation (\ref{eq:totalcost}), fixing parameters $N$, $c$, $f$, and consider the continuation $r\colon \mathbb{R}_+ \to \mathbb{R}$ onto the reals, that is
+%\[ 
+    %r(n) = \left(\frac{2c2^{n}}{p^2+p} + fp\right)/N = \frac{2c 2^{n} n^2}{N^2 (N+n)}+\frac{f}{n}. 
+%\]
+%Thus function $r$ constitutes a continuous real-valued function, and we can find optimal $n^*$ yielding minimum cost per bit payload using usual derivative test.
+%Since $N\gg n\gg 2$, we approximate
+%\begin{align*}
+    %\frac{\partial}{\partial n} r(n)   &\approx \frac{\partial}{\partial n} \left( \frac{2c 2^{n} n^2}{N^3}+\frac{f}{n} \right)\\
+                                         %&= \frac{2c 2^{n} n (n \log (2)+2)}{N^3}-\frac{f}{n^2}\\
+                                         %&\approx \left(\frac{2 \log (2)\,c}{N^3}\right) 2^{n} n^2 -\frac{f}{n^{2}}.
+%\end{align*}
+%Solving for $\partial/\partial n\, r(n^*)=0$, we get minimum cost at $n=n^*$, that is, with $\alpha, \beta \ll 1$ constants, $W$ the \emph{Lambert $W$ function},
+%\[ r(n^*) \approx f/n^* = \frac{\alpha\cdot f}{W\left(\beta\cdot\sqrt[4]{f N^3/c}\right)}. \]
+%is the approximative optimal relative cost, depending on $f$, $N$, $c$.
+%Assuming $W\in \mathcal{O}(\log)$, we observe
+%\begin{enumerate}
+    %\item relative cost is effectively linear with respect to transaction fee $f$,
+    %\item halvening the computation cost allows for a constant number of additional payload bits to be included, having same fixed budget; $1/r(n^*) \in \mathcal{O}(-\log(c))$;
+    %\item even though total cost $N\cdot r(n^*)$ of data is asymtotically sublinear in $\mathcal{O}(N / \log(N))$, for any reasonable quantity $N$ total cost grows effectively linear.
+%\end{enumerate}
 %We discuss the consequences of these findings in the last chapter.
 % TODO cost increase w.r.t. to the environment variables (exponential growth of efficiency)
 
@@ -259,27 +267,6 @@ Hence, computations of $\text{{SHA256}}(S(x))$ and $\text{{SHA256}}(H(x))$ both 
 % https://link.springer.com/chapter/10.1007/978-3-662-44893-9_12
 
 % TODO argue for bandwith limit imposed by block frequency (1 TX per block = 3117 outputs per block = 3117*n bits per 10 minutes)
-
-\begin{table*}
-    \centering
-    \sisetup{round-mode=figures,table-figures-exponent=1,table-number-alignment=center,scientific-notation=engineering,round-precision=3,exponent-to-prefix=true}
-    \begin{tabular}{S[table-figures-exponent=0]S[table-figures-exponent=0]S[table-figures-exponent=0]SS}
-        \toprule
-        {Bit} & {max. data rate (\si{\byte\per\second})} & {per block (\si{\kilo\byte})} & {req. hashrate (\si{\Hz})} & {rel. to Network}\\
-        \midrule
- 20 & 12.9875 & 7.7925 & 5447352. & 0.0000000000000518795 \\
- 25 & 16.2344 & 9.74063 & 174315274. & 0.00000000000166015 \\
- 30 & 19.4813 & 11.6888 & 5578088776. & 0.0000000000531247 \\
- 35 & 22.7281 & 13.6369 & 178498840822. & 0.00000000169999 \\
- 40 & 25.975 & 15.585 & 5711962906296. & 0.0000000543996 \\
- 45 & 29.2219 & 17.5331 & 182782813001482. & 0.00000174079 \\
- 50 & 32.4688 & 19.4813 & 5849050016047432. & 0.0000557052 \\
- 55 & 35.7156 & 21.4294 & 187169600513517800. & 0.00178257 \\
- 60 & 38.9625 & 23.3775 & 5989427216432571000. & 0.0570422 \\
-        \bottomrule
-     \end{tabular}
-    \caption{}
-\end{table*}
 
 \section{Discussion and Conclusion}
 
