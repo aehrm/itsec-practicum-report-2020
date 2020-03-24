@@ -15,6 +15,29 @@
 \setlist{itemsep=0.3ex}
 \setlist[enumerate]{label = (\alph*)}
 \usepackage[backend=biber,style=alphabetic]{biblatex}
+\usepackage{stfloats}
+\usepackage{tikz,pgfplots}
+\pgfplotscreateplotcyclelist{mylist}{%
+    draw={rgb,1:red,0.368417;green,0.506779;blue,0.709798},thick\\%
+    draw={rgb,1:red,0.880722;green,0.611041;blue,0.142051},thick\\%
+    draw={rgb,1:red,0.560181;green,0.691569;blue,0.194885},thick\\%
+    draw={rgb,1:red,0.922526;green,0.385626;blue,0.209179},thick\\%
+    draw={rgb,1:red,0.528488;green,0.470624;blue,0.701351},thick\\%
+}
+
+\output\expandafter{\the\output\floatfix}
+
+\makeatletter
+\def\floatfix{%
+\expandafter\ifx\csname r@x@one\endcsname\relax
+\else
+\ifnum\c@page=\numexpr\expandafter\expandafter\expandafter
+              \@secondoftwo\csname r@x@one\endcsname-1\relax
+\aftergroup\figone
+\fi
+\fi}
+\makeatother
+
 
 \title{Evaluation of countermeasures against malicious data inclusion attacks in Bitcoin}
 \author{Anton Ehrmanntraut}
@@ -44,23 +67,6 @@
 
 \section{Approach}
 
-\begin{table*}
-    \centering
-    \begin{tabular}{lrrrS[table-format=2.2,table-alignment=right]}
-        \toprule
-        & script size & max. payload & max. outputs & {tx bytes}\cr
-        Type & in byte & in byte & per tx &  {per output}\cr
-        \midrule
-        P2PK & 35 & 32 & 2267 & 44.10\cr
-        P2MS & 105 & $3\cdot 32$ & 875 & 38.09\rlap{*}\cr
-        P2PKH & 25 & 20 & 2934 & 34.08\cr
-        P2SH & 23 & 20 & 3117 & 32.08\cr
-        \midrule
-    \end{tabular}
-    % Key prefix ignored
-    % TODO explain P2MS; omit script size/payload size?
-\end{table*}
-
 \section{Increased cost of data inclusion}
 
 % TODO intros
@@ -80,11 +86,12 @@
               & GTX 1080 TI  & 250 & 100 & \si{\mega\hertz} & 9.0e-14 &  Feb. 2019\cr
         \midrule
         P2SH & GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.8e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
-        & GTX 2080 TI & 280 & 3800 & \si{\mega\hertz} & 2.7e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
+        & RTX 2080 TI & 280 & 3800 & \si{\mega\hertz} & 2.7e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
+        & RTX Titan & 300 & 4300 & \si{\mega\hertz} & 2.5e-15 & \cr% https://gist.github.com/Chick3nman/5d261c5798cf4f3867fe7035ef6dd49f
         \bottomrule
     \end{tabular}
-    % TODO
-    \caption{User's reports of their brute-force frequencies for \emph{Vanitygen} on specific hardware. We estimate cost parameter $c$ for the {P2PKH} by first researching estimated power consumption of the hardware under full load, and assuming energy cost of \num{.13} USD per \si{\kilo\watt\hour}.}
+    \caption{User's reports of their brute-force frequencies on specific hardware. For the P2PKH method, frequency was directly taken from reported \emph{Vanitygen} speed. For the P2SH method, SHA256 hash frequency reported from \emph{Hashcat} was divided by factor 2, as explained in the respective section.
+    We estimate cost parameter $c$ for the {P2PKH} by first researching estimated power consumption of the GPU under full load, and assuming energy cost of \num{.13} USD per \si{\kilo\watt\hour}.}
     \label{table:cost}
 \end{table*}
 
@@ -122,30 +129,56 @@ and conclude for the expected total cost $C$
 
 \subsection{Estimation of parameters}
 
-% TODO intros
+% TODO intros, Hardware?
 
 %The software introduced in previous section was used to measure values for $c$, separately for each inclusion method ({P2PK, P2PKH, P2SH}).
-%% TODO Hardware
 %Additionally, we can give further estimates for cost $c$ indirectly for the inclusion method {P2PKH} and {P2SH}.
 
 Before we can determine the cost increasse caused by the proposed countermeasure, we need to give sensible estimations for the cost parameters $c$ and $f$ involved in the previously stated cost model (\ref{eq:totalcost}).
-While fees $f$ for an transaction output are directly determined by the miners' fee rate, hashing cost depends on the efficiency of the hardware used for the brute-force process.
+While fees $f$ for an output are directly determined by the miners' transaction fee rate, hashing cost depends on the efficiency of the hardware used for the brute-force process.
 For this, we estimate the paramter indirectly using hash-rates reported by users of the tools \emph{Vanitygen} and \emph{Hashcat}.
-Since the P2PK method turns out to be the least effective, the omit an estimation of $c$ for this method.
+%Since the P2PK method turns out to be the least effective, the omit an estimation of $c$ for this method.
 
 \paragraph{Transaction fees}
-The fees required for publishing the outputs into the blockchain, i.e. parameter $f$, can easily estimated using the previously calculated average bytes required for a transaction output, as stated in table \ref{table:}.
-Multiplying with miner's transaction fees, and adding smallest non-dust output amount yields the value for paramter $f$.
-Table \ref{table:} gives this parameter numerically for all three methods, using transaction fees at point of publication.
-We further observe that the P2PK/P2MS methods are the least efficient method in this regard, therefore we focus on the two remaining methods P2PKH and P2SH when estimating brute-force computation cost.
+
+
+\begin{table*}[t]
+    \centering
+    \begin{tabular}{lrrrS[table-format=2.2,table-alignment=right]rS[table-format=1.2e-1,table-alignment=right]}
+        \toprule
+        & \llap{script size} & max. payload & max. outputs & {tx bytes} & {non-dust amount} & {}\cr
+        Type & in byte & length in byte & per tx &  {per output} & {per output in sat.} & {$f$ in USD}\cr
+        \midrule
+        P2PK & 35 & 32 & 2267 & 44.10 & 546 & 7.78e-2\cr
+        1-of-3 P2MS  & 105 & 32 & 2625 & 38.09& 182 & 4.44e-2\cr
+        P2PKH & 25 & 20 & 2934 & 34.08 & 546 & 6.99e-2\cr
+        P2SH & 23 & 20 & 3117 & 32.08& 546 & 6.83e-2\cr
+        \bottomrule
+    \end{tabular}
+    % Key prefix ignored
+    % TODO explain P2MS; omit script size/payload size?
+    \caption{Overview of the different trasaction types. 
+        % TODO
+    To compute value $f$, we multipy the transaction bytes required per output address (column 5) with current miner's transaction fees (10 sat per byte), and add the smalles non-dust amount (column 6), converted at current exchange rate of \num{7.9e3} USD per bitcoin.}
+\end{table*}
+
+The fees required for publishing the outputs into the blockchain, i.e. parameter $f$, can easily estimated using average bytes required for a transaction output.
+Multiplying with miner's transaction fees, and adding smallest non-dust burn amount (dependent on method) yields the value for paramter $f$.
+Table \ref{table:} gives this parameter in absolute values for all three methods, using transaction fees and Bitcoin price at point of publication.
+That is, network's transaction fee of 10 sat per byte, and \num{7.9e3} USD per bitcoin.
+Note that the P2MS strategy, arranging pubkeys in 1-of-3 multisig outputs, is currently the least expensive one in terms of fees required.
+Even though multisig outputs cause more overhead in the constructed transaction, required non-dust amount is counted per output, hence, grouping three pubkeys into one transaction output saves on burnt bitcoins.
+
+Since the P2PK method performs worst in this regard, we discard this method and focus on the related method P2MS, besides the fact that these two methods only differ in their transaction construction, yet are identical in their brute-force procedure.
 
 \paragraph{P2PKH hash cost estimation}
-For the {P2PKH} method, we can additionally rely on user reports on their performance using the tool \emph{Vanitygen}, which allows users to create vanity addresses.
+For the {P2PKH} method, we can rely on user reports on their performance using the tool \emph{Vanitygen}, which allows users to create vanity addresses.
 These Bitcoin addresses contain a human-readable prefix in their Base-58 representation.
 Similiarly to the presented tool in previous section, \emph{Vanitygen} brute-forces private keys, until the hashed public key has the desired prefix;
 this public key hash is preciely the one used to create {P2PKH} outputs.
 
 Hence, due to the computational similarity, it seems reasonable to estimate possible computational cost for the {P2PKH} method from reported frequencies of \emph{Vanitygen} on selected hardware.
+We assume that the computational effort of testing if a public key hash partially collides with one of the remaining unassigned payloads is negleglible.
 In fact, the \emph{OpenCL} code used for the (usually faster performing) GPU code direcly builds on top of the one used in \emph{Vanitygen}.
 Table \ref{table:cost} gives estimations for cost $c$ bases on selected user reports.
 
@@ -176,29 +209,80 @@ Comparing the two methods, we can already observe that elliptic-curve arithmetic
 We therefore omit a precise cost estimation of the P2PK/P2MS method, and can assume that savings made by omitting the RIPEMD160/SHA256 operations (in comparision to the P2PKH method) are neglegible.
 
 \subsection{Comparison with state-of-the-art methods}
-This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
-To begin with, we summarize the results of previous chapter in table \ref{table:}, giving rough but sensible estimates for inclusion method P2PKH and P2SH.
-Paramter $f$ is based on network's transaction fee of \num{7.9e-4} USD (10 sat) per byte at point of publication, and minimum non-dust amount of \num{4.3e-2} USD (546 sat).
-\begin{table}[h]
+
+\begin{figure*}[tb]
     \centering
-    \sisetup{table-format=1.1e-2,table-number-alignment=right}
-    \begin{tabular}{lSS}
+    \pgfplotstableread[col sep=comma, ignore chars={"}]{graph1.csv}{\totalcostplot}
+    \begin{tikzpicture}[
+            mark size=1.5pt
+        ]
+        \begin{semilogyaxis}[
+                height=8cm,
+                width=13cm,
+                grid=both,
+                xmin=5,
+                xmax=55,
+                ymax=1,
+                log ticks with fixed point,
+                ymin=1e-2,
+                cycle list name=mylist,
+                legend style={at={(0.5,0.95)},
+		anchor=north,legend columns=2},
+                xlabel={Prefix length $n$ in bits},
+                ylabel={Expected cost per kilobyte in USD}
+            ]
+
+            \addplot+[mark=x] table [x={n}, y={p2pkh}] {\totalcostplot};
+            \addlegendentry{P2PKH}
+            \addplot+[mark=o] table [x={n}, y={p2ms}] {\totalcostplot};
+            \addlegendentry{P2MS}
+            \addplot+[mark=square] table [x={n}, y={p2sh}] {\totalcostplot};
+            \addlegendentry{P2SH}
+            \addplot+[dashed,mark=none] table [x={n}, y={p2fms}] {\totalcostplot};
+            \addlegendentry{fake multisig}
+        \end{semilogyaxis}
+    \end{tikzpicture}
+    % TODO
+\end{figure*}
+
+This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
+To begin with, we choose following rough but sensible estimates for computation cost parameter $c$ for methods P2MS, P2PKH, P2SH, based on our observations from previous section.
+We estimate $c_\text{ms}=c_\text{pkh}=\num{1.0e-13}$ USD, $c_\text{sh} = \num{3.0e-15}$ USD.
+Also stated in previous section, fee parameter $f$ directly follows from Bitcoin price and mining fees, and is displayed in table \ref{table:}.
+
+As was given in the introduction, the best present method of including arbitrary data uses fake public keys (in their extended 65 byte presentation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures.
+Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\bit}$, and computing $f$ identically to previous procedure, considering \SI{70.16}{\byte} per output.
+This gives us a constant cost efficiency of \num{1.07e-3} USD per byte as benchmark.
+
+Figure \ref{fig:plot} plots the expected cost per byte payload, using $N=\SI{10}{\kilo\byte}$ and previously stated parameters, for each method.
+As comparison, the constant relative cost of the state-of-the-art method is highlighted by the dashed horizontal line. 
+
+\enlargethispage{\baselineskip}
+We confirm that determiniong the most cost-effetive prefix length corresponds to finding the local minimum of the cost function.
+Futhermore, the plot supports the trade-off nature of the problem: left of the maximum point, cost increases proportional due to more addresses required; cost right of the maximum point is dominated by the exponentially increasing brute force computation cost.
+
+By routine exhaustion, we give minimum cost per kilobyte payload in table \ref{table:},
+and obtain following result: 
+defending the Bitcoin network against unwanted data inclusion using proof-of-ownership signatures could allow for an 8-fold increase (resp.\@ 11-fold increase if restricted to public-key-based addresses) of inclusion cost, at current situation.
+
+Nevertheless, it needs to be highlighted that optimal cost efficiency can only be obtained using significant computational power.
+For example, using the fastest GPU for the P2SH inclusion method from table \ref{table:}, including the \SI{10}{\kilo\byte} already requires 72 hours of computation.
+In fact, real-time inclusion using non-specialized hardware seems out of reach for prefix lenghts as low as 28 bits, requiring more than a minute of computation time on a typical personal computer for payload length of $N=\SI{100}{\byte}$ (assuming hash frequency of \SI{10}{\mega\hertz}).
+
+\begin{table}
+    \centering
+    \begin{tabular}{lrS[table-format=0.4,table-alignment=right]S[table-format=2.2,table-alignment=right]}
         \toprule
-        \textbf{Method} & {\textbf{$c$ in USD}} & {\textbf{$f$ in USD}}\cr
+        & {\textbf{\llap{opt. prefix}}} & {\textbf{exp. cost in}} & \textbf{{rel. increase}}\cr
+        & {\textbf{length}} & {\textbf{USD per kB}} & {\textbf{w.r.t.\@ P2FMS}}\cr
         \midrule
-        P2PKH & 1.0e-13 & 7.0e-2\cr
-        P2SH &  3.3e-15 & 6.8e-2\cr
+        P2PKH & 42 & 0.137 & 12.7\cr
+        P2MS  & 42 & 0.0882 & 11.2\cr
+        P2SH & 47 & 0.120 & 8.21\cr
         \bottomrule
     \end{tabular}
 \end{table}
 
-As was given in the introduction, the best present method of including arbitrary data uses fake public keys (in their extended 65 byte presentation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures.
-Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{1560}{\bit}$, and computing $f$ identically to previous procedure, considering \SI{210.48}{\byte} per output.
-This gives us a constant cost efficiency of \num{1.07e-3} USD per byte as benchmark.
-%at most 475 outputs (carrying \SI{195}{\byte} of payload) can be embedded in a single transaction, yielding a cost efficiency of \num{1.07e-3} USD per byte, using same network's transaction fee and non-dust amount.
-
-Figure \ref{fig:plot} plots the expected cost per byte payload, using $N=\SI{1000}{\byte}$ and the paramters given in table \ref{table:}, for each method.
-As comparison, the constant relative cost of the state-of-the-art method is highlighted by the dashed horizontal line.
 
 
 \section{Analytical considerations}
