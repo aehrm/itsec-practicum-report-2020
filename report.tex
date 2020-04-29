@@ -1,23 +1,23 @@
-\documentclass[10pt,a4paper,twocolumn]{article}
+\documentclass[a4paper,11pt,titlepage]{scrbook}
 
-\usepackage{unicode-math}
-\setmainfont{Libertinus Serif}
-\setmathfont{Libertinus Math}
-
+\usepackage{graphicx}
+\usepackage{fancyhdr}         % Define simple headings
+\usepackage{vmargin}          % Adjust margins in a simple way
+\usepackage{tikz}
 \usepackage{polyglossia}
 \setdefaultlanguage{english}
-
 \usepackage{booktabs,makecell}
 \usepackage[binary-units=true]{siunitx}
 \usepackage[autopunct=true]{csquotes}
-\usepackage[labelfont=bf]{caption}
+\renewcommand{\mktextquote}[6]{#1#2#4#5#3#6}
+\usepackage[labelfont=bf,format=plain]{caption}
 \usepackage{enumitem}
 \setlist{itemsep=0.3ex}
 \setlist[enumerate]{label = (\alph*)}
 \usepackage[backend=biber,style=alphabetic]{biblatex}
+\usepackage{amssymb}
 \usepackage{mathtools}
-\usepackage{stfloats}
-\usepackage{tikz,pgfplots}
+\usepackage{pgfplots}
 \pgfplotscreateplotcyclelist{mylist}{%
     draw={rgb,1:red,0.368417;green,0.506779;blue,0.709798},thick\\%
     draw={rgb,1:red,0.880722;green,0.611041;blue,0.142051},thick\\%
@@ -26,43 +26,85 @@
     draw={rgb,1:red,0.528488;green,0.470624;blue,0.701351},thick\\%
 }
 
-\output\expandafter{\the\output\floatfix}
+\addtokomafont{disposition}{\rmfamily}
+\renewcommand*{\headfont}{\slshape}
+\newcommand{\blankpage}{
+ \clearpage{\pagestyle{empty}\cleardoublepage}
+}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\pagestyle{fancy}
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+\fancyhf{}
+\fancyhead[LE,RO]{{\headfont\thepage}}						% Left/right header for even/odd pages
+\fancyhead[LO]{\headfont\nouppercase{\rightmark}}	% Header for left page (odd)
+\fancyhead[RE]{\headfont\nouppercase{\leftmark}}	% Header for right page (even)
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{%
+\fancyhf{}													% No Header and Footer fields
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[C]{\thepage}
+}
 
 \makeatletter
-\def\floatfix{%
-\expandafter\ifx\csname r@x@one\endcsname\relax
-\else
-\ifnum\c@page=\numexpr\expandafter\expandafter\expandafter
-              \@secondoftwo\csname r@x@one\endcsname-1\relax
-\aftergroup\figone
-\fi
-\fi}
+\newlength{\chapnolen}
+\newlength{\chapparlen}
+\newsavebox{\chapno}
+\renewcommand{\@makechapterhead}[1]{
+  \vspace*{0.2\textheight}
+  \vskip 15\p@
+  {\parindent \z@ \raggedright \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+      \if@mainmatter
+        \savebox{\chapno}{\huge\bfseries \thechapter.}
+        \settowidth{\chapnolen}{\usebox{\chapno}}
+        \parbox[t]{\chapnolen}{\usebox{\chapno}}\nobreak\leavevmode
+      \fi
+    \fi
+    \interlinepenalty\@MM
+    \setlength{\chapparlen}{\textwidth}
+    \addtolength{\chapparlen}{-1.0\chapnolen}
+    \addtolength{\chapparlen}{-2ex}
+    \leavevmode\nobreak
+    \parbox[t]{\chapparlen}{\raggedright\huge \bfseries #1\par\nobreak}
+    \vskip 40\p@
+  }}
+
+\renewcommand{\@makeschapterhead}[1]{
+  \vspace*{50\p@}
+  {\parindent \z@ \raggedright
+    \normalfont
+    \interlinepenalty\@M
+    \huge \bfseries  #1\par\nobreak
+    \vskip 40\p@
+  }
+}
 \makeatother
 
-\renewcommand{\mktextquote}[6]{#1#2#4#5#3#6}
-
-
-\title{Evaluation of proof-of-ownership countermeasure against off-topic data inclusion attacks in Bitcoin}
-\author{Anton Ehrmanntraut}
-
-\renewenvironment{abstract}
-{\begin{quote}
-\noindent {\bfseries \abstractname.}}
-{\end{quote}
-}
 
 \begin{document}
 
-\raggedbottom
-\maketitle
-\begin{abstract}
-\end{abstract}
 
-\section{Introduction}
+\frontmatter
+\pagenumbering{roman}
+\chapter*{Abstract}
+% TODO
+\dots
 
-\section{Motivation and Scope}
+\tableofcontents
+\blankpage
 
-\begin{table*}
+\mainmatter
+\pagenumbering{arabic}
+\chapter{Introduction}
+
+\chapter{Motivation and Scope}
+
+\begin{table}
     \centering
     \begin{tabular}{lll}
         \toprule
@@ -74,7 +116,7 @@
         \bottomrule
     \end{tabular}
     \caption{Overview of the discussed address types.}
-\end{table*}
+\end{table}
 
 % ignore input-script-insertions <-> assume non-standard scripts banned
 % P2SH-method uses non-standard script and is not suited for analysis(?)
@@ -82,13 +124,13 @@
 
 % P2MS??
 
-\section{Background}
+\chapter{Background}
 
 %Many extensions are discussed that attempt to mitigate the problem of off-topic data inclusion, which, as was outlined in the introduction, can cause unwanted vulnerabilities to the Bitcoin blockchain.
 %We focus on proof-of-ownership countermeasures, since that method appears to be the strongest while respecting the principles of the Bitcoin network (permissionless, irreversible, etc.) 
 The following section first gives a detailed definition of the proof-of-ownershop countermeasure. After specifying the functionalty and demonstrating its intended effect, we develop an efficient brute-force method to circumvent this countermeasure. Last part of the section gives details on how to implement such circumvention in practice.
 
-\subsection{Proof-of-ownership countermeasure}
+\section{Proof-of-ownership countermeasure}
 
 In his Master's thesis \emph{Hardening Bitcoin against off-topic data inclusion}, Seeg proposes a countermeasure to this problem using a proof-of-ownership mechanism, which he calls \textquote{preimage solution}. 
 He observes that \textquote{variants that store data in standard transactions output can be mitigated by requiring proof that the variable parts}, that is, public keys (P2PK), public key hashes (P2PKH), script hashes (P2SH), \textquote{of the standard transactions are clean.}
@@ -118,10 +160,10 @@ This further motivates an evaluation of the proposed countermeasure.
 Additionally, other countermeasures that respect these mentioned principles build on top of the one-way property of the same cryptographic functions in a similar matter, e.g.\@ \textquote{self-verifying account identifiers} proposed by Matzutt et al.
 Therefore, this countermeasure and the respective circumvention act as representative for all one-way-based approaches.
 
-% \subsection{Commitment-based countermeasure}
+% \section{Commitment-based countermeasure}
 % TODO Matzutt??
 
-\subsection{Circumvention using partial preimages}
+\section{Circumvention using partial preimages}
 
 % Refer to similarities between Seegs proofs and Matzutts ICs
 
@@ -150,7 +192,7 @@ To be definite, we define the $n$-bit prefix of $x\cdot G$ as the $n$ most signi
 (From the perspective of the SEC-defined curve point representation used in Bitcoin, this corresponds to bits 9 to 264. In fact, first byte of the SEC representation is fixed.)
 
 
-\subsection{Implementation}
+\section{Implementation}
 
 Having provided a framework showing the mathematical possibility to circumvent such countermeasure, following section describes the neccessary steps to perform such inclusion in practice.
 That is, including payload data in order into the blockchain, where the data is embedded into output addresses of transactions.
@@ -179,11 +221,11 @@ When incrementing $m$, we add generator point to $P$, that is $P\coloneqq P+G$, 
 Again, having found $m$ with prefix of $P$ matching one fragment in the tree, we assign that fragment private key $m$.
 The P2PKH method can be implemented similiarly, by testing hashes $H(P)$.
 
-\begin{figure*}
+\begin{figure}
     \centering
     \includegraphics[width=16cm,keepaspectratio]{figure.pdf}
     \caption{}
-\end{figure*}
+\end{figure}
 
 \emph{Transaction construction.}
 From assigned private keys, we can construct transactions containing the respective public keys $f(x_1), f(x_2), \dots$ in order, embedding the prefixes $y_1, y_2, \dots$.
@@ -199,15 +241,15 @@ Submitting both the proofs and the previously generated transaction then success
 Note that this approach allows for the payload to be split up between multiple blocks in the blockchain.
 
 
-\section{Increased cost of data inclusion}
+\chapter{Increased cost of data inclusion}
 
 After having demonstrated the possibility to circumvent the proposed countermeasure by brute force, this section attempts to evaluate the effectiveness of that countermeasure. 
 Specifically, we assume a (not neccessarily adversarial) user, attempting to use the blockchain as data storage.
 We will see that the user's chosen prefix length for the partial collissions directly determines the inclusion cost, hence we first model the inclusion cost mathematically. Then, by giving further estimations of essential parameters, we are able to predict by which factor the proposed countermeasure using proof-of-ownership signatures increases inclusion cost with respect to current, unprotected situation using fake addresses. 
 
-\subsection{Modelling inclusion cost}
+\section{Modelling inclusion cost}
 
-\begin{table*}[t]
+\begin{table}[t]
     \centering
     \begin{tabular}{llr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.1e-2,table-number-alignment=right]r}
         \toprule
@@ -224,10 +266,10 @@ We will see that the user's chosen prefix length for the partial collissions dir
         & RTX Titan & 300 & 4300 & \si{\mega\hertz} & 2.5e-15 & \cr% https://gist.github.com/Chick3nman/5d261c5798cf4f3867fe7035ef6dd49f
         \bottomrule
     \end{tabular}
-    \caption{User's reports of their brute-force frequencies on specific hardware. For the P2PKH method, frequency was directly taken from reported \emph{Vanitygen} speed. For the P2SH method, SHA256 hash frequency reported from \emph{Hashcat} was divided by factor 2, as explained in the respective section.
+    \caption[User's reports of their brute-force frequencies on specific hardware.]{User's reports of their brute-force frequencies on specific hardware. For the P2PKH method, frequency was directly taken from reported \emph{Vanitygen} speed. For the P2SH method, SHA256 hash frequency reported from \emph{Hashcat} was divided by factor 2, as explained in the respective section.
     We estimate cost parameter $c$ for the {P2PKH} by first researching estimated power consumption of the GPU under full load, and assuming energy cost of \num{.13} USD per \si{\kilo\watt\hour}.}
     \label{table:cost}
-\end{table*}
+\end{table}
 
 Essentially, the choice of a suitable prefix length is a trade-off:
 On the one hand, the number of required keypairs, and hence needed transaction fees, are inversely proportional to the chosen prefix length;
@@ -262,7 +304,7 @@ and conclude for the expected total cost $C$
 %Figure \ref{fig:xxx} plots the expected total cost with respect to chosen prefix length, using $N=\SI{1000}{\byte}$, and sensible values for $f$, $c$, assuming the {P2PK} method (cf. next section).
 %We can clearly observe a minimum value, the inverse proportionality in bit ranges left of highlighted minimum value, and the exponential growth right of the minimum value.
 
-\subsection{Estimation of parameters}
+\section{Estimation of parameters}
 
 % TODO intros, Hardware?
 
@@ -277,29 +319,29 @@ For this, we estimate the paramter indirectly using hash-rates reported by users
 \paragraph{Transaction fees}
 
 
-\begin{table*}[t]
+\begin{table}[t]
     \centering
     \begin{tabular}{lrrrS[table-format=2.2,table-alignment=right]rS[table-format=1.2e-1,table-alignment=right]}
         \toprule
-        & \llap{script size} & max. payload & max. addresses & {tx bytes} & {non-dust amount} & {}\cr
-        Type & in byte & length in byte & per tx &  {per address} & {per address in sat} & {$f$ in USD}\cr
+        & \llap{script} & payload & addresses & {tx bytes} & {non-dust} & {}\cr
+        Type & size & length & per tx &  {per addr.} & {amount} & {$f$ in USD}\cr
         \midrule
         % TODO recalculate with input script length 72
-        P2PK & 35 & 32 & 2267 & 44.10 & 546 & 7.78e-2\cr
-        1-of-3 P2MS  & 105 & 32 & 2625 & 38.09& 182 & 4.44e-2\cr
-        P2PKH & 25 & 20 & 2934 & 34.08 & 546 & 6.99e-2\cr
-        P2SH & 23 & 20 & 3117 & 32.08& 546 & 6.83e-2\cr
+        P2PK & 35 B & 32 B& 2267 & 44.10 & 546 sat& 7.78e-2\cr
+        1-of-3 P2MS  & 105 B & 32 B& 2625 & 38.09& 182  sat& 4.44e-2\cr
+        P2PKH & 25 B& 20 B & 2934 & 34.08 & 546 sat & 6.99e-2\cr
+        P2SH & 23 B& 20 B & 3117 & 32.08& 546 sat & 6.83e-2\cr
         \bottomrule
     \end{tabular}
     % omit script size/payload size?
-    \caption{Overview of the different trasaction types. 
+    \caption[Overview of the different trasaction types.]{Overview of the different trasaction types. 
         First column denotes the scripts size for a trasaction output, holding an address (resp. three addresses in the case of P2MS).
         Second column denotes the maximum payload length per address (in particular, the first byte of a 33-byte public key is a fixed prefix).
-        Third column gives how many addresses can be gathered in a single transaction (not exceeding the size limit of \SI{100}{\kilo\byte}),
+        Third column gives how many addresses can be gathered in a single transaction (not exceeding the size limit of \protect\SI{100}{\kilo\byte}),
         fourth column the average bytes required per address in that particular transaction.
         Note that non-dust amount (546 sat) is counted by output, hence P2MS non-dust amount per address is one third.
     To compute value $f$, we multipy the transaction bytes required per address (column 5) with current miner's transaction fees (10 sat per byte), and add the smalles non-dust amount (column 6), converted at current exchange rate of \num{7.9e3} USD per bitcoin.}
-\end{table*}
+\end{table}
 
 The fees required for publishing the address into the blockchain, i.e. parameter $f$, can easily estimated using average bytes required for a transaction output.
 For this, we construct the largest possible transaction  using a single P2PK coinbase input to fund the outputs with non-dust burns, and adding outputs until reaching network's size limit of $\SI{100}{\kilo\byte}$.
@@ -344,11 +386,11 @@ Both the P2PKH and the P2SH method perform the same hash operations, only the fo
 Comparing the two methods, we can already observe that elliptic-curve arithmetics involved in the P2PK(H)/P2MS method heavily dominates the brute-force process.
 We therefore omit a precise cost estimation of the P2PK/P2MS method, and can assume that savings made by omitting the RIPEMD160/SHA256 operations (in comparision to the P2PKH method) are neglegible.
 
-\subsection{Comparison with state-of-the-art methods}
+\section{Comparison with state-of-the-art methods}
 
 % TODO correct kilobyte mistake
 
-\begin{figure*}[tb]
+\begin{figure}[tb]
     \centering
     \pgfplotstableread[col sep=comma, ignore chars={"}]{graph1.csv}{\totalcostplot}
     \begin{tikzpicture}[
@@ -380,8 +422,8 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and can ass
             \addlegendentry{fake multisig}
         \end{semilogyaxis}
     \end{tikzpicture}
-    \caption{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see equation \ref{eq:totalcost}) with $N=\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{1.0e-13}$ USD, $f=\num{6.99e-2}$ USD), P2MS ($c=\num{1.0e-13}$ USD, $f=\num{4.44e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{6.83e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs.}
-\end{figure*}
+    \caption[Log-linear plot of expected total cost.]{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see equation \ref{eq:totalcost}) with $N=\protect\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{1.0e-13}$ USD, $f=\num{6.99e-2}$ USD), P2MS ($c=\num{1.0e-13}$ USD, $f=\num{4.44e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{6.83e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs.}
+\end{figure}
 
 This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
 To begin with, we choose following rough but sensible estimates for computation cost parameter $c$ for methods P2MS, P2PKH, P2SH, based on our observations from previous section.
@@ -418,12 +460,12 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
         P2PKH & 42 & 13.7 & 12.7\cr
         \bottomrule
     \end{tabular}
-    \caption{Minimum point $n$ and minimum value $\mathrm{E[C]}$ from plot in figure \ref{fig:}. Rightmost column gives the relative increase with respect to the constant efficiency achievable using fake addresses in multisig outputs.}
+    \caption[Minimum expected cost.]{Minimum point $n$ and minimum value $\mathrm{E[C]}$ from plot in figure \ref{fig:}. Rightmost column gives the relative increase with respect to the constant efficiency achievable using fake addresses in multisig outputs.}
 \end{table}
 
 
 
-\subsection{Variations in parameters}
+\section{Variations in parameters}
 
 We established a model estimating cost of inclusion from parameters $N$, $f$ and $c$, corresponding to payload size resp.\@ the economic situation of the Bitcoin network (transaction fees, bitcoin exchange rate) resp.\@ computational cost of the hashing procedure.
 It is therefore logical to investigate the impact on changes on this parameter, especially since a continuiation of the exponentially growing trend of computation efficiency is expected, and many believing a significant increase in bitcoin's exchange rate.
@@ -438,6 +480,7 @@ Therefore, we continue our analysis by looking at the cost of an inclusion \emph
 In order to derive parameter $f$ from bitcoin exchange rate $p$, we fix the P2MS method and network transaction fees of 10 sat per byte.
 From this, as was alreay performed in section \ref{}, we define $f = p \cdot (182\,\text{sat} + \SI{38.09}{\byte}\cdot 10\,\text{sat}\,\si{\per\byte})$, that is, again, non-dust amount per address plus bytes occupied in the transaction multiplied with network fees.
 Combining with given parameter $c$, let $C_\text{p2ms}(p,c)$ be the optimal relative inclusion cost in USD per byte, determined by numerically finding optimal prefix length $n$.
+For inclusion cost using fake keys we generalize our computation from previous section \ref{sec:} and reach $C_\text{fake}(p) = p \cdot (\SI{65}{\byte})^{-1} \cdot (182\,\text{sat} + \SI{70.16}{\byte}\cdot 10\,\text{sat}\,\si{\per\byte})$. (That is, transaction fee plus non-fee amount, divided by payload length of 65 bytes.)
 
 In order to state the effect of bitcoin price and computation cost quantitatively, we proceed with numerically computing $C_\text{p2ms}(p,c)$ for $c$ and $p$ in the peviously fixed respective ranges; price $p$ in $10^{0.5}$-fold increments, $c$ in $10^{0.2}$-fold increments, yielding 272 data points.
 
@@ -452,7 +495,7 @@ See also figure \ref{}, which plots observed data points against the fit in a lo
 
 Having established that model, we can derive from parameters $\beta$ and $\gamma$ following observations.
 First, as we expected, relative inclusion cost $C_\mathrm{p2sh}(p,c)$ is almost linear.
-Since sublinear, we expect that $C_\mathrm{p2sh}(p,c)$ continues to converge towards inclusion cost reachable using fake keys, which grows linear w.r.t.\@ price $p$.
+Since sublinear, we expect that $C_\mathrm{p2sh}(p,c)$ continues to converge towards $C_\mathrm{fake}(p)$, which grows linear w.r.t.\@ price $p$.
 Nevertheless, this trend appears to be minor; a 100-fold bitcoin price increase lowers relative inclusion cost by no more than \SI{12}{\percent}.
 
 Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10^6$, for example, would lead to a relative inclusion cost of $\SI{69}{\percent}$ of original computation cost. (Moore's law estimates the cost decrease of factor $10^6$ in a timespan of 40 years.)
@@ -474,7 +517,7 @@ For our established bounds of parameters, this means $C_\mathrm{p2sh}(p,c) / C_\
 
 
 
-\section{Cost of malicious attack}
+\chapter{Cost of malicious attack}
 
 In this section, we address the problem of data inclusion from the perspective of a malicious adversary.
 As was outlined in the introduction, deliberate inclusion of problematic data into the Blockchain, such as copyright-protected, illegal, or politically sensitive content, could render the possession of the Blockchain illegal in most jurisdictions.
@@ -538,7 +581,7 @@ This, in turn, requires the brute-force process to produce $p$ suitable addresse
         (unrestr.) & 10.2 & (160) & 104 & (160) \\
         \bottomrule
     \end{tabular}
-    \caption{Attainable rate of payload data included into the blockchain while circumventing proof-of-ownership countermeasure using proposed brute-force method on P2SH addresses, constrained by hash rate given in the left column. Percentages in the left column represent fractions of current total miners' hash rate (\SI{90}{\exa\hertz}). Second row shows the assumed maximum allowed transaction size for including addresses, per block.
+    \caption[Attainable rate of payload data included into the blockchain while circumventing proof-of-ownership countermeasure using proposed brute-force method on P2SH addresses.]{Attainable rate of payload data included into the blockchain while circumventing proof-of-ownership countermeasure using proposed brute-force method on P2SH addresses, constrained by hash rate given in the left column. Percentages in the left column represent fractions of current total miners' hash rate (\protect\SI{90}{\exa\hertz}). Second row shows the assumed maximum allowed transaction size for including addresses, per block.
     Last row calculates the payload data rate in absence of any countermeasure, i.e. using all 160 bits of the P2SH address field.}
 \end{table}
 
@@ -557,8 +600,15 @@ their efficiency cannot be used for the proposed brute-force procedure, and only
 
 % We conclude that, while proof-of-ownership countermeasures do cause a drop in attainable rate of (potentially harmful) data embedded into the blockchain, figures remain in a 
 
-\section{Discussion and Conclusion}
+\chapter{Discussion and Conclusion}
 
 % https://link.springer.com/article/10.1007/s11227-018-2317-6
+
+\backmatter
+
+\addcontentsline{toc}{chapter}{\listfigurename}
+\listoffigures
+\addcontentsline{toc}{chapter}{\listtablename}
+\listoftables
 
 \end{document}
