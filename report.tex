@@ -3,6 +3,7 @@
 \usepackage{graphicx}
 \usepackage{fancyhdr}         % Define simple headings
 \usepackage{vmargin}          % Adjust margins in a simple way
+\usepackage{textpos}
 \usepackage{tikz}
 \usepackage{polyglossia}
 \setdefaultlanguage{english}
@@ -26,6 +27,21 @@
     draw={rgb,1:red,0.528488;green,0.470624;blue,0.701351},thick\\%
 }
 
+\newcommand{\docType}{Master Report} % select your thesis type
+\newcommand{\mainTitle}{Evaluating the effect on countermeasures preventing the inclusion of off-topic data into Bitcoin's\\ blockchain}
+\newcommand{\authorName}{Anton Ehrmanntraut}
+\newcommand{\reviewerOneName}{Prof. Dr. Alexandra Dmitrienko}
+\newcommand{\reviewerOneTask}{First Reviewer}
+\newcommand{\advisorOneName}{Name Advisor 1}
+\newcommand{\advisorOneTask}{First Advisor}
+\newcommand{\submissionTime}{\today}
+\newcommand{\place}{Würzburg}
+\newcommand{\authorDepartment}{Department of Computer Science}
+\newcommand{\authorChair}{Chair of Computer Science II (Secure Software Systems)}
+\newcommand{\authorAssociation}{Universität Würzburg}
+\newcommand{\webadress}{www.uni-wuerzburg.de}
+
+
 \addtokomafont{disposition}{\rmfamily}
 \renewcommand*{\headfont}{\slshape}
 \newcommand{\blankpage}{
@@ -33,6 +49,9 @@
 }
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
+\setpapersize{A4}
+\setmarginsrb{3cm}{1cm}{3cm}{1cm}{6mm}{7mm}{5mm}{15mm}
+
 
 \pagestyle{fancy}
 \renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
@@ -53,12 +72,14 @@
 \widowpenalty 10000
 \clubpenalty 10000
 
-
 \begin{document}
+
 
 
 \frontmatter
 \pagenumbering{roman}
+\include{titlepage}
+\setmarginsrb{3cm}{1cm}{3cm}{1cm}{6mm}{7mm}{5mm}{15mm}
 \chapter*{Abstract}
 % TODO
 \dots
@@ -70,8 +91,92 @@
 \pagenumbering{arabic}
 \chapter{Introduction}
 
+Bitcoin, the decentralized, distributed, pseudonymous P2P electronic cash system introduced in 2009, makes use of blockchains, distributed data structures, as permanent tamper-proof and and append-only log of transactions, enforcing irreversibility of these transactions.
+By design, the blockchain is distributed to all users of the Bitcoin, and specifically every user maintains a local copy of the entire blockchain.
+
+The beneficial properties of the blockchain storage – distributed, tamper-proof, timestamped, among others – have incentivized actors to use Bitcoin's bitcoin as permanent data storage.
+\begin{displayquote}
+    \textins{F}or example, to record a digital fingerprint
+    of a file in such a way that anyone could establish proof-of-existence of that file on a specific date by reference to that transaction.
+\end{displayquote}
+Antonopoulos recalls. He continues by outlining the debate behind such use.
+\begin{displayquote}
+    The use of bitcoin’s blockchain to store data unrelated to bitcoin payments is a controversial subject.
+    Many developers consider such use abusive and want to discourage it.
+    Others view it as a demonstration of the powerful capabilities of blockchain technology and want to encourage such experimentation. Those who object to the inclusion of nonpayment data argue that it causes \enquote{blockchain bloat,} burdening those running full bitcoin nodes with carrying the cost of disk storage for data that the blockchain was not intended to carry.
+\end{displayquote}
+While most such inclusions of off-topic data in practice are negleglibe in size, more sophisticated methods allowed actors to include entire files such as images and PDF files.
+
+Besides the issues already mentioned by Antonopoulos (general bloat of blockchain and payment processing), the Bitcoin community observed legal issues in connection with this data inclusions, since 2011.
+Illegal content in the blockchain makes participants of the network legally liable, who need to maintain a copy of the blockchain.
+
+Hence, the insertion of objectionable content has the potential to jeopardize Bitcoin (and generalizing, all blockchain-based cryptocurrencies), rendering participation illegal in certain jurisdictions.
+Seeg observes that these deliberate inclusions have the possibility to manipulate the bitcoin price, i.e.\@ expecting falling prices caused by endangered legality, and hence give an attacker serious financial incentive for executing such an attack, inserting malicious data.
+
+Several approaches were discussed to prevent this type of off-topic data inclusion.
+These range from monitoring incoming data, consensus-based deletions of harmful portions of the blockchain, 
+or maintaining balances instead of transactions.
+Matzutt et al.\@ first observed that maintaining pseudonymity implies that no countermeasure can comprehensively detect all unintended data.
+
+
+
+% Bitcoin overview: permanent record in the blockchain, local copies
+% Problem description: inclusion of data unrelated to transaction processing is controversial; blockchain bloat, UXTOs, legal risks
+% financial motivations for causing DoS
+
 % As was outlined in the introduction, deliberate inclusion of problematic data into the Blockchain, such as copyright-protected, illegal, or politically sensitive content, could render the possession of the Blockchain illegal in most jurisdictions.
 % Hence, due to persistency of the blockchain, this malicious inclusion harms every participant in Bitcoin's network, and might make participation even legally impossible.
+
+\section{Approach and Contribution}
+
+%In general, we can expect increasingly stronger countermeasures involving increasingly radical methods to be more 
+In general, we can expect that increasingly more effective countermeasures require increasingly radical methods, which in turn, make adoption of that countermeasure increasingly controversial.
+Hence from a theoretical perspective, when given a concensus on which methods are considered so controversial that they are rejected, we can determine a maximal effectivity of any countermeasure that is considered acceptable in the sense of the given concensus.
+
+Due to the multitude of different interest groups and actors that constitute Bitcoin's community, a precise concensus of the approved methods available when designing an effective countermeasure seems unlikely.
+Nevertheless, we can identify a minimal set of general principles that can be considered defining for Bitcoin,
+that is \textquote{\textins*{e}ven if all Bitcoin users decide to adopt any of these changes, the resulting cryptocurrency can no longer be considered \enquote{Bitcoin} because it has diverged too much from the original design.}
+
+In light of these principles, we make plausible that a proof-of-ownership countermeasure, a generalization of proposed countermeasures by Seeg and Matzutt et al.\@, resp., are maximally strong. 
+A brute-force exponential-time inversion on the involved cryptographic primitives leads to a trivial circumvention of that proof-of-ownership countermeasure.
+Under reasonable assumptions on the one-way property of the involved cryptographic primitives,
+the computational resources neccessary for that specific brute-force circumvention serve as a sensible upper bound for the strength of the countermeasure.
+
+Having established this circumvention, we focus on the main part of the paper.
+As first result, a stochastic model of expected inclusion cost, in combination with a sensible estimate of the currently availiable computing efficiency on the cryptographic primitives, allows us to assess the effectivity of the proposed countermeasure, and in turn, any countermeasure adhering the aforementioned principles.
+Furthermore, as secondary result, we assess the impact on variations in bitcoin price and availiable computing efficiency.
+
+
+%In analyzing and generalizing Seeg's countermeasure, we obtain a theoretical upper bound on the strength of any reasonable countermeasure.
+% Approach: modelling increase in inclusion cost
+% Contribution: provide upper bounds for the effectiveness (w.r.t. to countermeasures adhering the principles)
+
+\section{Outline}
+
+Following this introduction, section 2 gives an overview on the transaction processing in the Bitcoin network, and then demonstrate how the inclusion of off-topic data into the blockchain is currently implemented.
+
+Section 3 clarifies the above-mentioned principles, which makes it immediately clear that the countermeasure proposed by Seeg cannot be further strengthened without violating the principles.
+A slight generalization of his proposed countermeasure is presented, followed by an implementation of a brute-force circumvention.
+
+On the basis of this implementation, section 4 establishes a stochastic model estimating the expected cost involved in executing a circumventing and inserting arbitrary data into the blockchain.
+From this the above mentioned main results are calculated.
+
+Finally, section 5 concludes with a summary of the findings, and discusses potential improvements in the countermeasure.
+
+
+
+%Bitcoin's princliples are presented, which serve as a neccessary list of rules to be adhered by any modification on the network's protocol, in order to be adopted.
+%We make plausible that, in combination with this principles, proof-of-ownership countermeasures, a generalization of Seeg's proposed countermeasure, can be interpreted as maximally strong.
+
+%A brute-force attack on the cryptographic primitives involved in the countermeasure serve as a reasonable upper bound on the computational hardness in circumventing the countermeasure.
+%A practical implementation of such circumvention is outlined.
+%%, which is, assuming that these primitives have in fact their presumed one-way property, optimal in terms of algorithmic complexity.
+
+
+%We conclude with a summary of the findings, and discuss potential improvements in the countermeasure.
+
+
+%We then recapitulate Seeg's proposed countermeasure, and in combination with ..., we make plausible that such countermeasure can be considered maximally strong with respect to sufficiently compatible modifications in the Bitcoin protocol 
 
 \chapter{Data inclusion in the blockchain}
 
@@ -192,7 +297,7 @@ Hence, the adoption of such countermeasure would transform the Bitcoin system in
 While there is no central authority stating these properties, the corresponding \emph{Bitcoin Wiki} text can serve as representative for the concensus of the community:
 \begin{displayquote}
     \noindent
-    \textooquote{}All changes and upgrades to the protocol should strive to maintain and reinforce these Principles of Bitcoin
+    All changes and upgrades to the protocol should strive to maintain and reinforce these Principles of Bitcoin
 
     \begin{enumerate}[label={[}\arabic*.{]}]
         \item 21 million coins.
@@ -201,7 +306,7 @@ While there is no central authority stating these properties, the corresponding 
         \item Permissionless: No arbitrary gatekeepers should ever prevent anybody from being part of the network (user, node, miner, etc).
         \item Pseudonymous: No ID should be required to own, use Bitcoin.
         \item Fungible: All coins are equal and should be equally spendable.
-        \item Irreversible Transactions: Confirmed blocks should be set in stone. Blockchain History should be immutable.\textcoquote
+        \item Irreversible Transactions: Confirmed blocks should be set in stone. Blockchain History should be immutable.
     \end{enumerate}
 \end{displayquote}
 The mentioned countermeasures above would contradict principles 4, 5, or 7, at least.
@@ -217,7 +322,9 @@ From these principles appear to follow, that these countermeasures must respect 
 As a consequence, an \textquote{honest participant} necessarily needs to be identified by \textquote{control of their private key}.
 Hence a submitted destination address is clean if the owner of that address can prove control, that is, ownership of the address.
 
-Following section introduces a Proof-of-ownership countermeasure that appears to be the strongest one respecting these propositions, motivating the evaluation of this countermeasure and its circumvention.
+Matzutt et al.\@ already pointed out that pseudonymous identifies (cf.\@ with principle 5) always open the possibility to insert data by encoding them into these identifies: no matter how \textquote{control of the private key} is implemented, users willing to insert content into the blockchain always have the possibility to generate arbitrary many addresses until suitable ones encoding the content are found.
+
+Following section introduces a Proof-of-ownership countermeasure that appears to be the strongest one respecting these propositions, motivating the evaluation of this countermeasure and its circumvention, which directly incorporates the approach outlined by Matzutt et al.
 
 
 \section{Proof-of-ownership countermeasure}
@@ -230,7 +337,7 @@ Such proof of ownership is derived from the \textquote*{private} preimage part o
 The wanted effect follows from the assumption that given \textquote*{public} part of a non-clean address, one cannot efficiently derive \textquote*{private} preimage required for the proof of ownership.
 
 For P2PK address types, this translates into a proof using signatures, which certify the control of the corresponding private key.
-That is, in order for Alice to send coins to Bob, he sends her off-band his public key $x\cdot G$, and a signature $\sigma$ verifying message $m=H(x\cdot G)$, generated using private key $x$.
+That is, in order for Alice to send coins to Bob, he sends her off-band his public key $x\cdot G$, and – this is the addition caused by the countermeasure – a signature $\sigma$ verifying message $m=H(x\cdot G)$, generated using private key $x$.
 Then, Alice can construct a P2PK transaction with recipient key/address $x\cdot G$, and when submitting the transaction to the network, she attaches $\sigma$ which proves that Bob indeed controls that address. 
 (This entails that $\sigma$ needs to be transmitted off-band to Alice before the transaction.)
 Miners can verify $\sigma$ using the public key $x\cdot G$ embedded in the transaction, approving the output address of the transaction.
@@ -246,13 +353,13 @@ Again, this prevents data inclusion due to the one-way property of hash function
 (Note that in the case of P2PKH and P2SH transactions, Seeg proposed a slightly weaker approach, exploiting the choice of $H$ as composition of two hash methods, and using the first digest as $\sigma$.)
 
 In fact, this type of countermeasure appears to be one one of the strongest compatible with the Principles of Bitcoin.
-Addresses that withstand the proposed test are to be precisely the addresses that can be generated by honest participants of the network, who should not be penalized by any countermeasure.
+We already observed that control of a private key is a sufficient proof that the public address is clean,
+and this countermeasure approriately takes respective signatures $\sigma$ as such proof of control.
+Addresses that withstand the proposed test hence are precicely the addresses that can be generated by honest participants of the network, who should not be penalized by any countermeasure.
+
 %This further motivates an evaluation of the proposed countermeasure.
 Additionally, other countermeasures that respect these mentioned principles build on top of the one-way property of the same cryptographic functions in a similar matter, e.g.\@ \textquote{self-verifying account identifiers} proposed by Matzutt et al.
 Therefore, this countermeasure and the respective circumvention act as representative for all one-way-based approaches.
-
-% \section{Commitment-based countermeasure}
-% TODO Matzutt??
 
 \section{Circumvention using partial preimages}
 
@@ -282,6 +389,8 @@ While the notion of prefixes is clear in the case of hash digests involved in P2
 To be definite, we define the $n$-bit prefix of $x\cdot G$ as the $n$ most significant bits of first coordinate $a$ of that curve point. 
 (From the perspective of the SEC-defined curve point representation used in Bitcoin, this corresponds to bits 9 to 264. In fact, first byte of the SEC representation is fixed.)
 
+Note that the relative strength of this countermeasure cannot be amplified by hardening the function $f$.
+While harder $f$ make computation of partial preimages increasingly difficult, so are honest users inhibited by harder address generation.
 
 \section{Implementation}
 
@@ -300,6 +409,8 @@ Nevertheless we omit rainbow tables, since this issue could easily be solved whe
 Cf.\@ with the \textquote{freshness property} in Matzutt's approach.
 
 The procedure is given with a chosen prefix length $n$. Performance and cost directly depend on this parameter, and a fit choice for $n$ is discussed in the next section.
+
+\subsubsection*{Detailed description of the procedure}
 
 \emph{Preparation.} First, we partition the payload into fragments $y_1, y_2, \dots, y_p$ of length $n$, and use a binary tree as efficient data structure to access the fragments, sorting them by their lexicographic order.
 
@@ -323,7 +434,7 @@ The P2PKH method can be implemented similarly, by testing hashes $H(P)$.
 From assigned private keys, we can construct transactions containing the respective public keys $f(x_1), f(x_2), \dots$ in order, embedding the prefixes $y_1, y_2, \dots$.
 That is, we construct a transaction with a single funding input, and add corresponding outputs containing the public keys as destination addresses, whereas every output must send a value of at least the non-dust amount of 546 sat.
 If the size of the transaction exceeds a defined limit (or the network limit of $\SI{100}{\kilo\byte}$), we add an output referred by the next transaction as funding input, as depicted in figure \ref{fig:tx-construction}.
-A terminal OP\_RETURN-output allows embedding of metadata, facilitating reconstruction of the data.
+A terminal Null-Data-output allows embedding of metadata, facilitating reconstruction of the data.
 Since we have chained the transactions using funding inputs, the transaction identifier of the last transaction can serve as locator for the data in the blockchain.
 It is recommended to use P2PK(H) scripts as funding inputs, since the signatures in the scriptSig parts effectively prevents modifications to the transaction, for example an unwanted reordering of the transaction outputs.
 
@@ -332,8 +443,15 @@ Again, having the private keys $x_1, x_2, \dots$, it is trivial to generate the 
 Submitting both the proofs and the previously generated transaction then successfully embeds the entire payload into the blockchain.
 Note that this approach allows for the payload to be split up between multiple blocks in the blockchain.
 
-% TODO ECC security implies lower bound complexity-wise
-% TODO parallelization
+\subsubsection*{Computational properties}
+
+We carefully ensured that the iterations of the partial preimage loop, the major part constituting the computational hardness, is particularly efficient, especially by using a binary tree to quickly search for matching fragments, and caching the elliptic curve point $P$.
+Hence, it seems unlikely that modifications on the interations could increase performance.
+
+Likewise, it is plausible that the performance of this algorithm cannot be considerably increased.
+Any other modifications would need to employ sophisticated techniques to limit the search space of potential nonces, which would directly attack the underlying cryptographic primitives (SHA256 and elliptic curve cryptography).
+
+We further observe that the preimage loop can easily be parallelilized on multiple cores and computers, especially allowing efficient implementations on GPUs.
 
 
 \chapter{Increased cost of data inclusion}
@@ -644,9 +762,10 @@ Before discussing the impact of $p$ and $c$, we can observe that relative saving
 this trend is independent of all other parameters.
 Therefore, we continue our analysis by looking at the cost of an inclusion \emph{relative} to payload size, while additionally fixing $N=\SI{10}{\kilo\byte}$.
 
-% TODO Motivation for P2MS??
-% TODO discuss choice of tx fee?
 In order to derive parameter $f$ from bitcoin exchange rate $p$, we fix the P2MS method and network transaction fees of 10 sat per byte.
+We observe that inclusion cost to increase with respect to transaction fees required for the inclusion into the blockchain, hence fixing the efficient P2MS method and this relatively low fee seems to imply reasonable lower bounds for the inclusion cost.
+
+
 This is motivated by the fact that 10 sat per byte can be considered a lower bound on the network's transaction cost, and assuming this value, P2MS method is the cheapest one.
 Accordingly, the final results of the following calculation can be interpreted as a reasonable lower bound.
 
@@ -797,8 +916,8 @@ Following our assessment that the proposed countermeasure is maxmimally strong w
 While replacements in the underlying cryptographic primitives of Bitcoin are expected to be controversial, 
 these could have a significant impact on the circumvention's hardness, and hence can be employed to further improve the effectiveness of the countermeasure.
 
-For example, a sensible strengthening could be achived by replacing the implementation of Bitcoin's hash function $H$ to a memory-hard hash function (e.g.\@ \emph{scrypt}).
-With applicable parameters, this adoption would make the parallelization of the brute-force process (memory-)costly, but without impeding miners computing the hash digests during transaction verification.
+For example, a sensible strengthening could be achived by replacing the implementation of Bitcoin's script hash function $H$ to a memory-hard hash function (e.g.\@ \emph{scrypt}).
+With applicable parameters, this adoption would make the parallelization of the brute-force process (memory-)costly, but without strongly impeding miners computing the hash digests during transaction verification.
 Thus, combined with a ban of P2PK/P2MS transactions (i.e.\@ restricting outputs to $H$-digests), time required to compute the respective keypairs for a data inclusion could be moved out of reasonable bounds.
 
 %Nevertheless, it is not unreasonable to expect much more serious issues arising with an aversary deliberatly including problematic data.
