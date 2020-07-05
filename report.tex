@@ -258,8 +258,7 @@ Bitcoin implements the authenticity system of these references using a challenge
 
 Bitcoin provides several methods for implementing locking and unlocking scripts, and as example, the widespread pay-to-public-key script types are presented: In this scenario, a payee Bob expects the payer Alice to publish a valid transaction with his public key embedded in the locking script of an output $x$.
 Then, to transfer these coins to Charlie, Bob constructs a transaction $t$ with an input referencing $x$, adding to the unlocking script a signature of message $t$, signed with his private key, corresponding to the public key embedded in $x$.
-Then Bob can add the output with the locking script expected by Charlie, and submit the transaction.
-% TODO citation?
+Then Bob can add the output with the locking script expected by Charlie, and submit the transaction. \cite[Cf. chap.~6--7]{antonopoulos_mastering_2017}
 
 
 The network verifies this reference by checking the signature of the unlocking script against the public key embedded in the locking script.
@@ -523,27 +522,6 @@ We will see that the user's chosen prefix length for the partial collisions dire
 
 \section{Modeling inclusion cost}
 
-\begin{table}[t]
-    \centering
-    \begin{tabular}{llr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.1e-2,table-number-alignment=right]r}
-        \toprule
-        \textbf{Method} & \textbf{Hardware} & \multicolumn{1}{r}{\textbf{est. wattage}} &\multicolumn{2}{r}{\textbf{est. freq.}} & \multicolumn{1}{r}{\textbf{$c$ in USD}} & \textbf{ref.}\cr
-        %\midrule
-        \midrule
-        P2PKH & AMD RX 480  & 225 & 60 & \si{\mega\hertz} & 1.4e-13 &  Aug. 2016\cr %https://en.bitcoin.it/w/index.php?title=Vanitygen&type=revision&diff=61424&oldid=58554
-              & GTX 1060  & 120 & 40 & \si{\mega\hertz} & 1.1e-13 &  Mar. 2018\cr
-              & GTX 1080 TI  & 250 & 100 & \si{\mega\hertz} & 9.0e-14 &  Feb. 2019\cr
-        \midrule
-        P2SH & GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.8e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
-        & RTX 2080 TI & 280 & 3800 & \si{\mega\hertz} & 2.7e-15 & \cr % https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505
-        & RTX Titan & 300 & 4300 & \si{\mega\hertz} & 2.5e-15 & \cr% https://gist.github.com/Chick3nman/5d261c5798cf4f3867fe7035ef6dd49f
-        \bottomrule
-    \end{tabular}
-    \caption[User's reports of their brute-force frequencies on specific hardware]{User's reports of their brute-force frequencies on specific hardware. For the P2PKH method, frequency was directly taken from reported \emph{Vanitygen} speed. For the P2SH method, SHA256 hash frequency reported from \emph{Hashcat} was divided by factor 2, as explained in the respective section.
-    We estimate cost parameter $c$ for the {P2PKH} by first researching estimated power consumption of the GPU under full load, and assuming energy cost of \num{.13} USD per \si{\kilo\watt\hour}.}
-    \label{table:cost}
-\end{table}
-
 Essentially, the choice of a suitable prefix length is a trade-off:
 On the one hand, the number of required keypairs, and hence needed transaction fees, are inversely proportional to the chosen prefix length;
 on the other hand, the probability for a partial collision decreases exponentially with respect to the prefix length, and in turn, computation cost increases exponentially.
@@ -585,7 +563,7 @@ and conclude for the expected total cost $C$
 
 Before we can determine the cost increase caused by the proposed countermeasure, we need to give sensible estimations for the cost parameters $c$ and $f$ involved in the previously stated cost model (\ref{eq:totalcost}).
 While fees $f$ for publishing an address are directly determined by the miners' transaction fee rate, hashing cost depends on the efficiency of the hardware used for the brute-force process.
-For this, we estimate the parameter indirectly using hashrates reported by users of the tools \emph{Vanitygen} \cite{vanitygen_2012} and \emph{Hashcat} \cite{hashcat_2020}.
+For this, we estimate the parameter indirectly using hashrates reported by users of the tools \emph{VanitySearch} by Jean-Luc Pons \cite{vanitygen_2012} and \emph{Hashcat} by Jens Steube et al.\@ \cite{hashcat_2020}.
 %Since the P2PK method turns out to be the least effective, the omit an estimation of $c$ for this method.
 
 \subsubsection*{Transaction fees}
@@ -605,8 +583,8 @@ For this, we estimate the parameter indirectly using hashrates reported by users
         P2SH & 23 B& 20 B & 3117 & 32.08& 546 sat & 6.83e-2\cr
         \bottomrule
     \end{tabular}
+    % TODO non-dust, payload length, tx bytes irrelevant
     % TODO describe columns as labels changed
-    % omit script size/payload size?
     \caption[Overview of the different transaction types]{Overview of the different transaction types. 
         First column denotes the scripts size for a transaction output, holding an address (resp. three addresses in the case of P2MS).
         Second column denotes the maximum payload length per address (in particular, the first byte of a 33-byte public key is a fixed prefix).
@@ -619,7 +597,7 @@ For this, we estimate the parameter indirectly using hashrates reported by users
 
 The fees required for publishing the address into the blockchain, i.e. parameter $f$, can easily estimated using average bytes required for a transaction output.
 For this, we construct the largest possible transaction  using a single P2PK coinbase input to fund the outputs with non-dust burns, and adding outputs until reaching network's size limit of $\SI{100}{\kilo\byte}$.
-Multiplying with miner's transaction fees, and adding smallest non-dust burn amount (dependent on method) yields the value for parameter $f$.
+Multiplying with miner's transaction fees, and adding smallest non-dust burn amount to each output yields the value for parameter $f$.
 Table \ref{table:txtypes-parameters} gives this parameter in absolute values for all three methods, using transaction fees and Bitcoin exchange rate at point of publication.
 That is, network's transaction fee of 10 sat per byte, and \num{7.9e3} USD per bitcoin.
 Note that the P2MS strategy, arranging pubkeys in 1-of-3 multisig outputs, is currently the least expensive one in terms of fees required.
@@ -628,15 +606,41 @@ Even though multisig outputs cause more overhead in the constructed transaction,
 Since the P2PK method performs worst in this regard, we discard this method and focus on the related method P2MS, besides the fact that these two methods only differ in their transaction construction, yet are identical in their brute-force procedure.
 
 \subsubsection*{Hash cost estimation}
-For the {P2PKH} method, we can rely on user reports on their performance using the tool \emph{Vanitygen}, which allows users to create \emph{vanity addresses}.
+\begin{table}[t]
+    \centering
+    \begin{tabular}{lr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.1e-2,table-number-alignment=right]l}
+        \toprule
+        \textbf{Hardware} & \multicolumn{1}{r}{\textbf{wattage}} &\multicolumn{2}{r}{\textbf{est. freq.}} & \multicolumn{1}{r}{\textbf{$c$ in USD}} & \textbf{ref.}\cr
+        %\midrule
+        \midrule
+        \emph{P2PKH} \cr
+              GTX 1660 TI  & 120 & 960 & \si{\mega\hertz} & – &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
+              GTX 1650  & 75 & 510 & \si{\mega\hertz} & – &  \cite[][cf.~\#374]{forums_vanitysearch}\cr
+              RTX 2080 Super  & 250 & 2000 & \si{\mega\hertz} & – &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
+              RTX 2080 TI (MSI) & 300 & 2500 & \si{\mega\hertz} & – &  \cite[][cf.~\#343]{forums_vanitysearch}\cr
+              Tesla V100-SXM3-32GB  & 300 & 2500 & \si{\mega\hertz} & – &  \cite[][cf.~\#619]{forums_vanitysearch}\cr
+        \midrule
+        \emph{P2SH} \cr
+        GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.8e-15 & \cite{gosney_1080ti} \cr 
+        RTX 2080 TI & 300 & 3700 & \si{\mega\hertz} & 2.7e-15 &\cite{celik_2080ti} \cr
+        %& RTX Titan & 300 & 4300 & \si{\mega\hertz} & 2.5e-15 &  \cr
+        \bottomrule
+    \end{tabular}
+    \caption[Selected user's reports of their brute-force frequencies on specific hardware]{Selected user's reports of their brute-force frequencies on specific hardware. For the P2PKH method, frequency was directly taken from reported \emph{VanitySearch} speeds. For the P2SH method, SHA256 hash frequency reported from \emph{Hashcat} was divided by factor 2, as explained in the respective section.
+    We estimate cost parameter $c$ for the {P2PKH} by first researching estimated power consumption of the GPU under full load, and assuming energy cost of \num{.13} USD per \si{\kilo\watt\hour}.}
+    \label{table:cost}
+\end{table}
+
+For the {P2PKH} method, we can rely on user reports on their performance using the tool \emph{VanitySearch}, which allows users to create \emph{vanity addresses}.
 These Bitcoin addresses contain a human-readable message as prefix in their Base-58 representation. \cite[Cf.][82--83]{antonopoulos_mastering_2017}
-Similarly to the presented tool in previous section, \emph{Vanitygen} brute-forces private keys, until the hashed public key has the desired prefix;
+Similarly to the presented tool in previous section, \emph{VanitySearch} brute-forces private keys, until the hashed public key has the desired prefix;
 this public key hash is precisely the one used to create {P2PKH} hashes.
 
-Hence, due to the computational similarity, it seems reasonable to estimate possible computational cost for the {P2PKH} method from reported frequencies of \emph{Vanitygen} on selected hardware.
+Hence, due to the computational similarity, it seems reasonable to estimate possible computational cost for the {P2PKH} method from reported frequencies of \emph{VanitySearch} on selected hardware.
 We assume that the computational effort of testing if a public key hash partially collides with one of the remaining unassigned payloads is negligible.
-%In fact, the \emph{OpenCL} code used for the (usually faster performing) GPU code direcly builds on top of the one used in \emph{Vanitygen}.
-Table \ref{table:cost} gives estimations for cost $c$ bases on selected user reports form the Bitcoin Forums.
+%In fact, the \emph{OpenCL} code used for the (usually faster performing) GPU code direcly builds on top of the one used in \emph{VanitySearch}.
+Table \ref{table:cost} gives estimations for cost $c$ bases on selected user reports form the \emph{Bitcointalk} forums.
+%Findings are limited on reports made in the last 12 months, and with $\geq \SI{1000}{\mega\hertz}$ reported per processing unit.
 
 %\subsubsection*{P2SH hash cost estimation}
 In a similar matter, one can use the performances in computing {SHA256} digests as estimation for the cost of the {P2SH} method.
@@ -649,18 +653,20 @@ As was outlined in previous section, the brute-force procedure for the {P2SH} me
 % KL15
 The primitive hash functions {RIPEMD160} and {SHA256} are highly similar in architecture and performance; their respective Merkle–Damgård transforms also operate on the same block size of 511 bits.
 Therefore, the effort required in above procedure (\ref{eq:p2sh-hash}) can be considered twice as large as one {SHA256} digest computation (in the sense of input length $\leq\!\SI{512}{\bit}$). 
-% TODO citation needed?
 
 % hashcat
-Likewise to previous estimation using \emph{Vanitygen}, we can use hash frequencies published by users of the password cracking tool \emph{Hashcat}.
+Likewise to previous estimation using \emph{VanitySearch}, we can use hash frequencies published by users of the password cracking tool \emph{Hashcat}.
 Dividing the reported SHA256 hash frequency by factor 2 thus yields an approximate frequency accomplishable for the P2SH brute-force procedure.
 (We can assume that the GPU can be programmed to perform RIPEMD160 calculations in similar speed.)
 Again, refer to table \ref{table:cost} for estimations on cost $c$ bases on selected user reports.
+These numbers should explicitly not be understood to represent the current state of hardware efficiency, but rather as figures attainable with available off-the-shelf hardware.
+While non-GPU hardware has the potential to be more energy-efficient, either the hardware cannot be easily adapted (e.g.\@ in the case of ASIC hardware), or the frequencies too low to perform the brute-force algorithm in sensible time.
 
 Both the P2PKH and the P2SH method perform the same hash operations, only the former has to additionally perform a elliptic-curve addition.
 Comparing the two methods, we can already observe that elliptic-curve arithmetic involved in the P2PK(H)/P2MS method dominates the brute-force process.
 We therefore omit a precise cost estimation of the P2PK/P2MS method, and can assume that savings made by omitting the RIPEMD160/SHA256 operations (in comparison to the P2PKH method) are negligible.
 (From the gathered numbers we can infer a speed increase of approximately \SI{1}{\percent}, going from P2PKH to P2PK address generation.)
+% TODO speed increase not neglegible!
 
 \section{Comparison with state-of-the-art methods}\label{sec:comparison}
 
@@ -696,7 +702,7 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and can ass
             \addlegendentry{fake multisig}
         \end{semilogyaxis}
     \end{tikzpicture}
-    \caption[Log-linear plot of expected total cost]{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see equation \ref{eq:totalcost}) with $N=\protect\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{1.0e-13}$ USD, $f=\num{6.99e-2}$ USD), P2MS ($c=\num{1.0e-13}$ USD, $f=\num{4.44e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{6.83e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs.}
+    \caption[Log-linear plot of expected total cost]{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see equation \ref{eq:totalcost}) with $N=\protect\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{1.0e-13}$ USD, $f=\num{6.99e-2}$ USD), P2MS ($c=\num{1.0e-13}$ USD, $f=\num{4.44e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{6.83e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs (P2FMS).}
     \label{fig:plot}
 \end{figure}
 
@@ -846,7 +852,7 @@ Usual least-squares-error method provides $\alpha \approx \num{-5.5003}$, $\beta
 
 It is explicitly to be remarked that this model does not precisely explain the data; this becomes clear when considering the visible patterns in the residual graph of this regression.
 Nevertheless, the model appears to be sufficiently precise to estimate the effect of the variables $p$, $c$ on relative inclusion cost: in fact, mean square error $\sum \epsilon_i^2/(n-2) < \num{e-4}$, and maximum residual is $\max |\epsilon_i| < 0.022$. Consequently, the model predicts inclusion cost with a relative error of at most \SI{5.2}{\percent}.
-See also figure \ref{fig:fit}, which plots observed data points against the fit in a log-log plot.
+See also figure \ref{figure:fit}, which plots observed data points against the fit in a log-log plot.
 
 Having established that model, we can derive from parameters $\beta$ and $\gamma$ following observations:
 First, as we expected, relative inclusion cost $C_\mathrm{p2ms}(p,c)$ is almost linear with respect to bitcoin price $c$.
