@@ -608,7 +608,7 @@ For this, we estimate the parameter indirectly using hashrates reported by users
     \label{table:txtypes-parameters}
 \end{table}
 
-The fees required for publishing the address into the blockchain, i.e. parameter $f$, can easily estimated using average bytes required for a transaction output.
+The fees required for publishing the address into the blockchain, i.e.\@ parameter $f$, can easily estimated using average bytes required for a transaction output.
 For this, we construct the largest possible transaction  using a single P2PK coinbase input to fund the outputs with non-dust burns, and adding outputs until reaching network's size limit of $\SI{100}{\kilo\byte}$.
 Multiplying with miner's transaction fees, and adding smallest non-dust burn amount to each output yields the value for parameter $f$.
 Table \ref{table:txtypes-parameters} gives this parameter in absolute values for all three methods, using transaction fees and Bitcoin exchange rate at point of publication.
@@ -729,7 +729,7 @@ We estimate $c_\text{ms}=c_\text{pkh}=c_\text{p2pkh}=\num{4.50e-13}$ USD, $c_\te
 Also stated in previous section, fee parameter $f$ directly follows from Bitcoin exchange rate and mining fees, and is displayed in table \ref{table:txtypes-parameters}.
 
 From the results of Sward et al., we can infer that the best present method of including arbitrary data using fake addresses exploits fake public keys (in their extended 65 byte representation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures (P2FMS). \cite[cf.~also table 3]{sward_data_2018}
-Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\bit}$, and computing $f$ identically to previous procedure (see also table table \ref{table:txtypes-parameters}).
+Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\byte}$, and computing $f$ identically to previous procedure (see also table table \ref{table:txtypes-parameters}).
 This gives us a constant cost efficiency of \num{1.09} USD$\,\si{\per\kilo\byte}$ as benchmark.
 
 Figure \ref{fig:plot} plots the expected cost per byte payload, with respect to prefix length $n$, using $N=\SI{10}{\kilo\byte}$ and previously stated parameters, for each method.
@@ -842,7 +842,7 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
         \end{loglogaxis}
     \end{tikzpicture}
     \caption[Optimal relative inclusion cost with respect to arbitrary parameters $c$ and bitcoin price $p$]{Top figure plots the optimal relative inclusion cost for the P2MS method with respect to fixed parameter $c$ and variable bitcoin price $p$ in a log-log scale. For comparison, red line shows the linear relative inclusion cost using fake keys.
-    Marked points denote numerically determined values, while the respective lines show the fit specified by the established regression model. Bottom figure is set up identically, but plots the respective effect factor of the countermeasure, i.e. the relative increase of inclusion cost with respect to P2FMS.}
+    Marked points denote numerically determined values, while the respective lines show the fit specified by the established regression model. Bottom figure is set up identically, but plots the respective effect factor of the countermeasure, i.e.\@ the relative increase of inclusion cost with respect to P2FMS.}
     \label{figure:fit}
 \end{figure}
 
@@ -867,7 +867,7 @@ Accordingly, the final results of the following calculation can be interpreted a
 As was already performed in section \ref{sec:parameters}, we can define parameter $f$ in units of sat, and multiply with $p$ to obtain parameter $f$ in terms of USD.
 Combining with given parameter $c$, let $C_\text{p2ms}(p,c)$ be the optimal relative inclusion cost in USD per byte, determined by numerically finding optimal prefix length $n$.
 By same methods, we can generalize the inclusion cost using fake keys, as
-\[ C_\text{fake}(p) = \frac{N}{\SI{65}{\byte}} \cdot f_\text{p2fpk} \cdot p. \]
+\[ C_\text{fake}(p) = \frac{N}{\SI{65}{\byte}} \cdot f_\text{p2fms} \cdot p. \]
 Cf. with equation (\ref{eq:totalcost}) and table \ref{table:txtypes-parameters}.
 
 In order to state the effect of bitcoin price and computation cost quantitatively, we proceed with numerically computing $C_\text{p2ms}(p,c)$ for $c$ and $p$ in the previously fixed respective ranges; both price $p$ and $c$ in $10^{0.2}$-fold increments, yielding 416 data points.
@@ -875,22 +875,22 @@ In order to state the effect of bitcoin price and computation cost quantitativel
 We continue by presenting a bivariate log-log regression model to explaining the dependent data points from the independent variables, that is,
 \begin{equation} \log_{10} \frac{C_\text{p2ms}(p, c)}{\text{USD}\,\si{\per\byte}} = \alpha + \beta \log_{10} \frac{p}{\text{USD}} + \gamma \log_{10} \frac{c}{\text{USD}} + \epsilon_i, \label{eq:regressionmodel}\end{equation}
 with unknown parameters $\alpha$, $\beta$, $\gamma$, and error terms $\epsilon_i$.
-Usual least-squares-error method provides $\alpha \approx \num{-2.5546}$, $\beta \approx\num{0.97538}$, $\gamma \approx\num{.024585}$.
+Usual least-squares-error method provides $\alpha \approx \num{-5.5378}$, $\beta \approx\num{0.97461}$, $\gamma \approx\num{.025315}$.
 
 
 It is explicitly to be remarked that this model does not precisely explain the data; this becomes clear when considering the visible patterns in the residual graph of this regression.
-Nevertheless, the model appears to be sufficiently precise to estimate the effect of the variables $p$, $c$ on relative inclusion cost: in fact, mean square error $< \num{5e-6}$, and maximum residual is $\max |\epsilon_i| < 0.0095$. Consequently, the model predicts inclusion cost with a relative error of at most \SI{2.22}{\percent}.
+Nevertheless, the model appears to be sufficiently precise to estimate the effect of the variables $p$, $c$ on relative inclusion cost: in fact, mean square error $< \num{e-5}$, and maximum residual is $\max |\epsilon_i| < 0.0129$. Consequently, the model predicts inclusion cost with a relative error of at most \SI{3.01}{\percent}.
 See also figure \ref{figure:fit}, which plots observed data points against the fit in a log-log plot.
 
 Having established that model, we can derive from parameters $\beta$ and $\gamma$ following observations:
 First, as we expected, relative inclusion cost $C_\mathrm{p2ms}(p,c)$ is almost linear with respect to bitcoin price $c$.
 Since sub-linear, we expect that $C_\mathrm{p2ms}(p,c)$ continues to converge towards $C_\mathrm{fake}(p)$, which grows linear with respect to $p$.
-Nevertheless, this trend appears to be minor; a 100-fold bitcoin price increase lowers relative inclusion cost by no more than \SI{10.7}{\percent}.
+Nevertheless, this trend appears to be minor; a 100-fold bitcoin price increase lowers relative inclusion cost by no more than \SI{11}{\percent}.
 
-Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10$, for example, would reduce relative inclusion cost by \SI{5.50}{\percent}. (Moore's law would estimate such cost decrease of factor $10$ in a time span of 7 years.)
+Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10$, for example, would reduce relative inclusion cost by \SI{5.66}{\percent}. (Moore's law would estimate such cost decrease of factor $10$ in a time span of 7 years.)
 
 We conclude: even though effectiveness of the proposed countermeasure decreases both with increasing bitcoin price and decreasing computational cost, effectiveness remains stable even for extreme values.
-For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{8.2}$.
+For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{8.1}$.
 
 %   \chapter{Cost of malicious attack}
 %   
@@ -981,7 +981,7 @@ For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p
 \section{Summary}
 
 Section 2 gave an overview of current method to include off-topic data using fake addresses, exploiting the presence of data fields in the transaction that are essential for payment processing in honest transactions.
-This exploit depends on the difficulty to verify the authenticity of (generalized) destination addresses, i.e. the network cannot distinguish between honest addresses and payload data masquerading as an address.
+This exploit depends on the difficulty to verify the authenticity of (generalized) destination addresses, i.e.\@ the network cannot distinguish between honest addresses and payload data masquerading as an address.
 
 In consideration with (community-defined) principles of the Bitcoin network, we generalize a countermeasure proposed by Seeg.
 In principle, this proof-of-ownership considers a transaction clean if and only if the sender of that transaction has control of the private components of the destination addresses.
@@ -993,8 +993,8 @@ Specifically, the implementation allows a trade-off between computation time req
 Furthermore, the construction generates addresses in such a way that the straightforward reconstruction of the payload data is possible.
 
 Section 4 gives a stochastic model that estimates the cost required by the brute-force circumvention, using the outlined implementation, assuming the presence of the considered countermeasure.
-Then, required parameters (price and computing cost) are estimated using publicly available data on hardware performance, implying that, at current date, the proposed countermeasure would increase the cost of arbitrary data inclusion by factor 8.
-Variations in these parameters show that this factor is in the range $[4, 10]$ for realistic values, considering the best-performing P2MS method.
+Then, required parameters (price and computing cost) are estimated using publicly available data on hardware performance, implying that, at current date, the proposed countermeasure would increase the cost of arbitrary data inclusion by factor 7.
+Variations in these parameters show that this factor is in the range $[4, 8]$ for realistic values, considering the best-performing P2MS method.
 Furthermore, our regression model implies that inclusion cost circumventing the countermeasure is dominated by Bitcoin price in a near-linear relationship.
 Impact on computing cost $c$ however is heavily sublinear, with a growth behavior proportional to $c^\gamma$, $\gamma \ll 1$ (cf.\@ eq.\@ \ref{eq:regressionmodel}), implying that improvements in hardware lead to minor effects on the effectivity of the countermeasure.
 
