@@ -15,6 +15,8 @@
 \usepackage{enumitem}
 \setlist{itemsep=0.3ex}
 \setlist[enumerate]{label = (\alph*)}
+\usepackage[unicode,psdextra,bookmarksopen]{hyperref}
+\hypersetup{pdfencoding=auto}
 \usepackage[backend=biber,style=ieee,urldate=comp]{biblatex}
 \DefineBibliographyStrings{english}{
     urlseen={accessed}
@@ -129,8 +131,21 @@
 \include{titlepage}
 \setmarginsrb{3cm}{1cm}{3cm}{1cm}{6mm}{7mm}{5mm}{15mm}
 \chapter*{Abstract}
-% TODO
-\dots
+Blockchain-based cryptocurrencies use this data structure as provide a persistent, distributed, append-only and timestamped ledger.
+These properties make blockchains attractive to use as storage for data that is not related to the payment processing itself.
+In the case of Bitcoin's blockchain, recent studies show that this inclusion of off-topic data has already been executed in practice.
+In fact, arguably objectionable content is already stored on Bitcoin's blockchain;
+this potentially illegal content has the possibility to put participants of the network at legal risk, imposing a threat to the entire network.
+
+To overcome this risk, possible countermeasure were discussed. This paper analyzes a countermeasure by Seeg, which exploits the one-way property of the address generation.
+This paper analyzes this approach, and identifies this type of countermeasure as maximally strong with respect to principles that can be considered compatible with the philosophy of Bitcoin, motivating an evaluation on the strength of this countermeasure.
+By performing a brute-force exponential-time inversion on the address generation, an implementation of a circumvention is obtained.
+
+Economic cost for executing this brute-force circumvention can be considered as reasonable  upper bound on the effectivity of the countermeasure.
+Hence, using publicly available benchmark figures, we estimate the cost of the circumvention, to assess the effectivity of any approach attempting to prevent off-topic inclusions while adhering the (social) principles of Bitcoin.
+
+
+
 
 \tableofcontents
 \blankpage
@@ -142,7 +157,7 @@
 Bitcoin, the decentralized, distributed, pseudonymous P2P electronic cash system introduced in 2009, makes use of blockchains, distributed data structures, as permanent tamper-proof and and append-only log of transactions, enforcing irreversibility of these transactions.
 By design, the blockchain is distributed to all users of the Bitcoin, and specifically every user maintains a local copy of the entire blockchain. \cite[Cf.][]{nakamoto_bitcoin_2008}
 
-The beneficial properties of the blockchain storage – distributed, tamper-proof, timestamped, among others – have incentivized actors to use Bitcoin's bitcoin as permanent storage of data unrelated to Bitcoin's payment processing.
+The beneficial properties of the blockchain storage – distributed, tamper-proof, timestamped, among others – have incentivized actors to use Bitcoin's blockchain as permanent storage of data unrelated to Bitcoin's payment processing.
 \begin{displayquote}
     \textins{F}or example, to record a digital fingerprint
     of a file in such a way that anyone could establish proof-of-existence of that file on a specific date by reference to that transaction,
@@ -468,6 +483,7 @@ Nevertheless we omit rainbow tables, since this issue could easily be solved whe
 Cf.\@ with the \textquote{freshness property} in the approach proposed by Matzutt et al. \cite[368--369]{matzutt_thwarting_2018}
 
 The procedure is given with a chosen prefix length $n$. Performance and cost directly depend on this parameter, and a fit choice for $n$ is discussed in the next section.
+Without loss of generality, we assume the payload length to be a multiple of $n$.
 
 \subsubsection*{Detailed description of the procedure}
 
@@ -563,7 +579,7 @@ and conclude for the expected total cost $C$
 
 Before we can determine the cost increase caused by the proposed countermeasure, we need to give sensible estimations for the cost parameters $c$ and $f$ involved in the previously stated cost model (\ref{eq:totalcost}).
 While fees $f$ for publishing an address are directly determined by the miners' transaction fee rate, hashing cost depends on the efficiency of the hardware used for the brute-force process.
-For this, we estimate the parameter indirectly using hashrates reported by users of the tools \emph{VanitySearch} by Jean-Luc Pons \cite{vanitygen_2012} and \emph{Hashcat} by Jens Steube et al.\@ \cite{hashcat_2020}.
+For this, we estimate the parameter indirectly using hashrates reported by users of the tools \emph{VanitySearch} by Pons \cite{vanitysearch_2019} and \emph{Hashcat} by Steube et al.\@ \cite{hashcat_2020}.
 %Since the P2PK method turns out to be the least effective, the omit an estimation of $c$ for this method.
 
 \subsubsection*{Transaction fees}
@@ -571,27 +587,24 @@ For this, we estimate the parameter indirectly using hashrates reported by users
 
 \begin{table}[t]
     \centering
-    \begin{tabular}{lrrrS[table-format=2.2,table-alignment=right]rS[table-format=1.2e-1,table-alignment=right]}
+    \begin{tabular}{lrrrS[table-format=0.8,table-alignment=right]rS[table-format=1.2e-1,table-alignment=right]}
         \toprule
-        & \llap{script} & payload & addresses & {tx bytes} & {non-dust} & {}\cr
-        Type & size & length & per tx &  {per addr.} & {amount} & {$f$ in USD}\cr
+        & \llap{\textbf{script}} & \textbf{payload} & \textbf{addresses} & {\textbf{total cost}} & {} & {}\cr
+        \textbf{Type} & \textbf{size} & \textbf{length} & {\textbf{per tx}} &  {\textbf{in BTC}} & {\textbf{$f$ in sat}} & {\textbf{$f$ in USD}}\cr
         \midrule
-        % TODO recalculate with input script length 72
-        P2PK & 35 B & 32 B& 2267 & 44.10 & 546 sat& 7.78e-2\cr
-        1-of-3 P2MS  & 105 B & 32 B& 2625 & 38.09& 182  sat& 4.44e-2\cr
-        P2PKH & 25 B& 20 B & 2934 & 34.08 & 546 sat & 6.99e-2\cr
-        P2SH & 23 B& 20 B & 3117 & 32.08& 546 sat & 6.83e-2\cr
+        P2PK         & 35 B & 32 B& 2267 &    0.02237552 & 987.01 & 7.70e-2\cr
+        1-of-3 P2MS  & 105 B & 32 B& 2625 &   0.01477540 & 562.07 & 4.50e-2\cr
+        P2PKH        & 25 B& 20 B & 2934 &    0.02601814 & 886.78 & 7.09e-2\cr
+        P2SH         & 23 B& 20 B & 3117 &    0.02701612 & 866.73 & 6.93e-2\cr
+        1-of-3 P2FMS  & 201 B & 65 B& 1425 & 0.01259140 & 883.60 & 7.07e-2\cr
         \bottomrule
     \end{tabular}
-    % TODO non-dust, payload length, tx bytes irrelevant
-    % TODO describe columns as labels changed
     \caption[Overview of the different transaction types]{Overview of the different transaction types. 
-        First column denotes the scripts size for a transaction output, holding an address (resp. three addresses in the case of P2MS).
-        Second column denotes the maximum payload length per address (in particular, the first byte of a 33-byte public key is a fixed prefix).
-        Third column gives how many addresses can be gathered in a single transaction (not exceeding the size limit of \protect\SI{100}{\kilo\byte}),
-        fourth column the average bytes required per address in that particular transaction.
-        Note that non-dust amount (546 sat) is counted by output, hence P2MS non-dust amount per address is one third.
-    To compute value $f$, we multiply the transaction bytes required per address (column 5) with current miner's transaction fees (10 sat per byte), and add the smallest non-dust amount (column 6), converted at current exchange rate of \num{7.9e3} USD per bitcoin.}
+        Second column denotes the scripts size for a transaction output, holding an address (resp. three addresses in the case of multisig),
+        third column the maximum payload length per address.
+        Fourth column gives how many addresses can be gathered in a single transaction (not exceeding the size limit of \protect\SI{100}{\kilo\byte}),
+        fifth column the total cost for submitting this transaction, that is with smallest non-dust amount (546 sat) per output plus transaction fees of 10 sat per byte.
+    Value $f$ is obtained by dividing total cost by number of addresses, further assuming current exchange rate of \num{8000} USD per BTC.}
     \label{table:txtypes-parameters}
 \end{table}
 
@@ -608,21 +621,21 @@ Since the P2PK method performs worst in this regard, we discard this method and 
 \subsubsection*{Hash cost estimation}
 \begin{table}[t]
     \centering
-    \begin{tabular}{lr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.1e-2,table-number-alignment=right]l}
+    \begin{tabular}{lr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.2e-2,table-number-alignment=right]l}
         \toprule
         \textbf{Hardware} & \multicolumn{1}{r}{\textbf{wattage}} &\multicolumn{2}{r}{\textbf{est. freq.}} & \multicolumn{1}{r}{\textbf{$c$ in USD}} & \textbf{ref.}\cr
         %\midrule
         \midrule
         \emph{P2PKH} \cr
-              GTX 1660 TI  & 120 & 960 & \si{\mega\hertz} & – &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
-              GTX 1650  & 75 & 510 & \si{\mega\hertz} & – &  \cite[][cf.~\#374]{forums_vanitysearch}\cr
-              RTX 2080 Super  & 250 & 2000 & \si{\mega\hertz} & – &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
-              RTX 2080 TI (MSI) & 300 & 2500 & \si{\mega\hertz} & – &  \cite[][cf.~\#343]{forums_vanitysearch}\cr
-              Tesla V100-SXM3-32GB  & 300 & 2500 & \si{\mega\hertz} & – &  \cite[][cf.~\#619]{forums_vanitysearch}\cr
+              GTX 1660 TI  & 120 & 960 & \si{\mega\hertz} & 4.51e-15 &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
+              GTX 1650  & 75 & 510 & \si{\mega\hertz} & 5.31e-15 &  \cite[][cf.~\#374]{forums_vanitysearch}\cr
+              RTX 2080 Super  & 250 & 2000 & \si{\mega\hertz} & 4.51e-15 &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
+              RTX 2080 TI (MSI) & 300 & 2500 & \si{\mega\hertz} & 4.33e-15 &  \cite[][cf.~\#343]{forums_vanitysearch}\cr
+              Tesla V100-SXM3-32GB  & 300 & 2500 & \si{\mega\hertz} & 4.33e-15 &  \cite[][cf.~\#619]{forums_vanitysearch}\cr
         \midrule
         \emph{P2SH} \cr
-        GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.8e-15 & \cite{gosney_1080ti} \cr 
-        RTX 2080 TI & 300 & 3700 & \si{\mega\hertz} & 2.7e-15 &\cite{celik_2080ti} \cr
+        GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.76e-15 & \cite{gosney_1080ti} \cr 
+        RTX 2080 TI & 300 & 3700 & \si{\mega\hertz} & 2.93e-15 &\cite{celik_2080ti} \cr
         %& RTX Titan & 300 & 4300 & \si{\mega\hertz} & 2.5e-15 &  \cr
         \bottomrule
     \end{tabular}
@@ -640,6 +653,7 @@ Hence, due to the computational similarity, it seems reasonable to estimate poss
 We assume that the computational effort of testing if a public key hash partially collides with one of the remaining unassigned payloads is negligible.
 %In fact, the \emph{OpenCL} code used for the (usually faster performing) GPU code direcly builds on top of the one used in \emph{VanitySearch}.
 Table \ref{table:cost} gives estimations for cost $c$ bases on selected user reports form the \emph{Bitcointalk} forums.
+We assume an energy cost of \num{.13} USD per \si{\kilo\watt\hour}. 
 %Findings are limited on reports made in the last 12 months, and with $\geq \SI{1000}{\mega\hertz}$ reported per processing unit.
 
 %\subsubsection*{P2SH hash cost estimation}
@@ -651,7 +665,8 @@ As was outlined in previous section, the brute-force procedure for the {P2SH} me
 % http://bench.cr.yp.to/results-hash.html#amd64-skylake
 % https://en.wikipedia.org/wiki/Comparison_of_cryptographic_hash_functions
 % KL15
-The primitive hash functions {RIPEMD160} and {SHA256} are highly similar in architecture and performance; their respective Merkle–Damgård transforms also operate on the same block size of 511 bits.
+The primitive hash functions {RIPEMD160} and {SHA256} are highly similar in architecture and performance; their respective Merkle–Damgård transforms also operate on the same block size of 512 bits. 
+Cf. for example the \emph{ECRYPT Benchmarking of Cryptographic Systems}. \cite{bernstein_benchmark}
 Therefore, the effort required in above procedure (\ref{eq:p2sh-hash}) can be considered twice as large as one {SHA256} digest computation (in the sense of input length $\leq\!\SI{512}{\bit}$). 
 
 % hashcat
@@ -663,16 +678,16 @@ These numbers should explicitly not be understood to represent the current state
 While non-GPU hardware has the potential to be more energy-efficient, either the hardware cannot be easily adapted (e.g.\@ in the case of ASIC hardware), or the frequencies too low to perform the brute-force algorithm in sensible time.
 
 Both the P2PKH and the P2SH method perform the same hash operations, only the former has to additionally perform a elliptic-curve addition.
-Comparing the two methods, we can already observe that elliptic-curve arithmetic involved in the P2PK(H)/P2MS method dominates the brute-force process.
-We therefore omit a precise cost estimation of the P2PK/P2MS method, and can assume that savings made by omitting the RIPEMD160/SHA256 operations (in comparison to the P2PKH method) are negligible.
-(From the gathered numbers we can infer a speed increase of approximately \SI{1}{\percent}, going from P2PKH to P2PK address generation.)
-% TODO speed increase not neglegible!
+Comparing the two methods, we can already observe that the digest calculation in the P2PKH method significantly contributes to total computation time, next to the elliptic-curve arithmetic.
+
+Specialized software for cracking ECDSA keypairs does not appear to exist, hence we cannot estimate parameter $c$ in the same manner.
+We therefore omit a precise cost estimation of the P2PK/P2MS method, and use the cost parameter $c$ of the P2PKH method as upper bound.
 
 \section{Comparison with state-of-the-art methods}\label{sec:comparison}
 
 \begin{figure}[tb]
     \centering
-    \pgfplotstableread[col sep=comma, ignore chars={"}]{graph1.csv}{\totalcostplot}
+    \pgfplotstableread[col sep=comma, ignore chars={"}]{plot1.csv}{\totalcostplot}
     \begin{tikzpicture}[
             mark size=1.5pt
         ]
@@ -681,8 +696,8 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and can ass
                 width=13cm,
                 grid=both,
                 xmin=5,
-                xmax=55,
-                ymax=100,
+                xmax=60,
+                ymax=400,
                 log ticks with fixed point,
                 ymin=1,
                 cycle list name=mylist,
@@ -692,28 +707,30 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and can ass
                 ylabel={Expected cost per USD per kilobyte}
             ]
 
-            \addplot+[mark=x] table [x={n}, y={p2pkh}] {\totalcostplot};
-            \addlegendentry{P2PKH}
+            \addplot+[mark=x] table [x={n}, y={p2pk}] {\totalcostplot};
+            \addlegendentry{P2PK}
             \addplot+[mark=o] table [x={n}, y={p2ms}] {\totalcostplot};
             \addlegendentry{P2MS}
+            \addplot+[mark=triangle] table [x={n}, y={p2pkh}] {\totalcostplot};
+            \addlegendentry{P2PKH}
             \addplot+[mark=square] table [x={n}, y={p2sh}] {\totalcostplot};
             \addlegendentry{P2SH}
             \addplot+[dashed,mark=none] table [x={n}, y={p2fms}] {\totalcostplot};
             \addlegendentry{fake multisig}
         \end{semilogyaxis}
     \end{tikzpicture}
-    \caption[Log-linear plot of expected total cost]{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see equation \ref{eq:totalcost}) with $N=\protect\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{1.0e-13}$ USD, $f=\num{6.99e-2}$ USD), P2MS ($c=\num{1.0e-13}$ USD, $f=\num{4.44e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{6.83e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs (P2FMS).}
+    \caption[Log-linear plot of expected total cost]{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see equation \ref{eq:totalcost}) with $N=\protect\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{4.50e-15}$ USD, $f=\num{7.90e-2}$ USD), P2MS ($c=\num{4.50e-15}$ USD, $f=\num{4.50e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{6.93e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs (P2FMS).}
     \label{fig:plot}
 \end{figure}
 
 This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
 To begin with, we choose following rough but sensible estimates for computation cost parameter $c$ for methods P2MS, P2PKH, P2SH, based on our observations from previous section.
-We estimate $c_\text{ms}=c_\text{pkh}=\num{1.0e-13}$ USD, $c_\text{sh} = \num{3.0e-15}$ USD.
+We estimate $c_\text{ms}=c_\text{pkh}=c_\text{p2pkh}=\num{4.50e-13}$ USD, $c_\text{sh} = \num{3.00e-15}$ USD.
 Also stated in previous section, fee parameter $f$ directly follows from Bitcoin exchange rate and mining fees, and is displayed in table \ref{table:txtypes-parameters}.
 
 From the results of Sward et al., we can infer that the best present method of including arbitrary data using fake addresses exploits fake public keys (in their extended 65 byte representation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures (P2FMS). \cite[cf.~also table 3]{sward_data_2018}
-Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\bit}$, and computing $f$ identically to previous procedure, considering \SI{70.16}{\byte} per 65-byte-pubkey.
-This gives us a constant cost efficiency of \num{1.07} USD$\,\si{\per\kilo\byte}$ as benchmark.
+Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\bit}$, and computing $f$ identically to previous procedure (see also table table \ref{table:txtypes-parameters}).
+This gives us a constant cost efficiency of \num{1.09} USD$\,\si{\per\kilo\byte}$ as benchmark.
 
 Figure \ref{fig:plot} plots the expected cost per byte payload, with respect to prefix length $n$, using $N=\SI{10}{\kilo\byte}$ and previously stated parameters, for each method.
 As comparison, the constant relative cost of the state-of-the-art method is highlighted by the dashed horizontal line. 
@@ -723,10 +740,10 @@ Furthermore, the plot confirms the trade-off nature of the problem: left of the 
 
 We give minimum cost per kilobyte payload in table \ref{table:optimalcost},
 and obtain following result: 
-defending the Bitcoin network against unwanted data inclusion using proof-of-ownership signatures could allow for an 8-fold increase of inclusion cost, at current situation.
+defending the Bitcoin network against unwanted data inclusion using proof-of-ownership signatures could allow for an 7-fold increase of inclusion cost, at current situation.
 
 Nevertheless, it needs to be highlighted that optimal cost efficiency can only be obtained using significant computation time.
-For example, using the fastest GPU for the P2SH inclusion method from table \ref{table:cost}, performing the brute-force algorithm with \SI{10}{\kilo\byte} payload already requires 72 hours of computation.
+For example, using the fastest GPU for the P2SH inclusion method from table \ref{table:cost}, performing the brute-force algorithm with \SI{10}{\kilo\byte} payload already requires more than 84 hours of computation.
 In fact, real-time inclusion using non-specialized hardware seems out of reach for prefix lengths as low as 28 bits, requiring more than a minute of computation time on a typical personal computer for payload length of $N=\SI{100}{\byte}$ (assuming hash frequency of \SI{10}{\mega\hertz}).
 
 \begin{table}
@@ -736,9 +753,10 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
         & {\textbf{\llap{opt. prefix}}} & {\textbf{exp. cost in}} & \textbf{{rel. increase}}\cr
         & {\textbf{length}} & {\textbf{USD per kB}} & {\textbf{w.r.t.\@ P2FMS}}\cr
         \midrule
-        P2MS  & 42 & 8.82 & 8.21\cr
-        P2SH & 47 & 12.0 & 11.2\cr
-        P2PKH & 42 & 13.7 & 12.7\cr
+        P2PK  & 47 & 13.9 & 12.8\cr
+        P2MS  & 46 & 8.08 & 7.43\cr
+        P2PKH & 47 & 12.5 & 11.5\cr
+        P2SH & 47 & 12.1 & 11.2\cr
         \bottomrule
     \end{tabular}
     \caption[Minimum expected cost]{Minimum point $n$ and minimum value $\mathrm{E[C]}$ from plot in figure \ref{fig:plot}. Rightmost column gives the relative increase with respect to the constant efficiency achievable using fake addresses in multisig outputs.}
@@ -753,7 +771,8 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
     \centering
     \pgfplotstableread[col sep=comma, ignore chars={"}]{plot2-fit.csv}{\costfit}
     \pgfplotstableread[col sep=comma, ignore chars={"}]{plot2-points.csv}{\costpoints}
-    \pgfplotstableread[col sep=comma, ignore chars={"}]{plot2-rel.csv}{\relpoints}
+    \pgfplotstableread[col sep=comma, ignore chars={"}]{plot3-fit.csv}{\relfit}
+    \pgfplotstableread[col sep=comma, ignore chars={"}]{plot3-points.csv}{\relpoints}
     \begin{tikzpicture}[
             mark size=1.5pt
         ]
@@ -767,24 +786,27 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
                 %log ticks with fixed point,
                 %ymin=1,
                 cycle list name=mylist,
-                legend style={at={(0.05,0.95)},
-                anchor=north west,legend columns=1},
+                legend style={at={(0.99,0.01)},
+                anchor=south east,legend columns=1},
                 xlabel={Bitcoin price $p$ in USD},
                 ylabel={$C_\mathrm{p2ms}(c,f)$ in USD per kilobyte}
             ]
 
             \addplot+[] table [x index={0}, y index={1}] {\costfit};
-            \addlegendentry{$c=\SI{10e-12}\,\text{USD}$}
+            \addlegendentry{$c=\SI{10e-14}\,\text{USD}$}
             \addplot+[] table [x index={0}, y index={2}] {\costfit};
             \addlegendentry{$c=\SI{10e-16}\,\text{USD}$}
             \addplot+[] table [x index={0}, y index={3}] {\costfit};
-            \addlegendentry{$c=\SI{10e-20}\,\text{USD}$}
+            \addlegendentry{$c=\SI{10e-18}\,\text{USD}$}
             \addplot+[] table [x index={0}, y index={4}] {\costfit};
+            \addlegendentry{$c=\SI{10e-20}\,\text{USD}$}
+            \addplot+[] table [x index={0}, y index={5}] {\costfit};
             \addlegendentry{$C_\mathrm{fake}(p)$}
-            \pgfplotsset{cycle list shift=-4}
+            \pgfplotsset{cycle list shift=-5}
             \addplot+[mark=+,only marks] table [x index={0}, y index={1}] {\costpoints};
             \addplot+[mark=+,only marks] table [x index={0}, y index={2}] {\costpoints};
             \addplot+[mark=+,only marks] table [x index={0}, y index={3}] {\costpoints};
+            \addplot+[mark=+,only marks] table [x index={0}, y index={4}] {\costpoints};
         \end{loglogaxis}
     \end{tikzpicture}\\[3em]
     \begin{tikzpicture}[
@@ -808,12 +830,15 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
                 ylabel={$C_\mathrm{p2ms}(p,c)/C_\mathrm{fake}(p)$},
             ]
 
-            \addplot+[mark=+] table [x index={0}, y index={1}] {\relpoints};
-            %\addlegendentry{$c=\SI{10e-12}\,\text{USD}$}
-            \addplot+[mark=+] table [x index={0}, y index={2}] {\relpoints};
-            %\addlegendentry{$c=\SI{10e-16}\,\text{USD}$}
-            \addplot+[mark=+] table [x index={0}, y index={3}] {\relpoints};
-            %\addlegendentry{$c=\SI{10e-20}\,\text{USD}$}
+            \addplot+[mark=+] table [x index={0}, y index={1}] {\relfit};
+            \addplot+[mark=+] table [x index={0}, y index={2}] {\relfit};
+            \addplot+[mark=+] table [x index={0}, y index={3}] {\relfit};
+            \addplot+[mark=+] table [x index={0}, y index={4}] {\relfit};
+            \pgfplotsset{cycle list shift=-4}
+            \addplot+[mark=+,only marks] table [x index={0}, y index={1}] {\relpoints};
+            \addplot+[mark=+,only marks] table [x index={0}, y index={2}] {\relpoints};
+            \addplot+[mark=+,only marks] table [x index={0}, y index={3}] {\relpoints};
+            \addplot+[mark=+,only marks] table [x index={0}, y index={4}] {\relpoints};
         \end{loglogaxis}
     \end{tikzpicture}
     \caption[Optimal relative inclusion cost with respect to arbitrary parameters $c$ and bitcoin price $p$]{Top figure plots the optimal relative inclusion cost for the P2MS method with respect to fixed parameter $c$ and variable bitcoin price $p$ in a log-log scale. For comparison, red line shows the linear relative inclusion cost using fake keys.
@@ -823,7 +848,7 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
 
 We established a model estimating cost of inclusion from parameters $N$, $f$ and $c$, corresponding to payload size resp.\@ the economic situation of the Bitcoin network (transaction fees, bitcoin exchange rate) resp.\@ computational cost of the hashing procedure.
 It is therefore logical to investigate the impact on changes on this parameter, especially since a continuation of the exponentially growing trend of computation efficiency is expected. %, and many believing a significant increase in bitcoin's exchange rate.
-To keep the analysis reasonable, we restrict the parameter space to $10^{-20} \leq c \leq 10^{-12}$ for computation cost, and for the bitcoin price $p$ to range $10^3\,\text{USD}/\text{BTC} \leq p \leq 10^6\,\text{USD}/\text{BTC}$.
+To keep the analysis reasonable, we restrict the parameter space to $10^{-20} \leq c \leq 10^{-14}$ for computation cost, and for the bitcoin price $p$ to range $10^3\,\text{USD}/\text{BTC} \leq p \leq 10^6\,\text{USD}/\text{BTC}$.
 Due to the transcendental nature of the cost function $\mathrm{E}[C]$ with respect to prefix length $n$, it seems out of reach to formulate a closed-form solution to finding optimal prefix length and respective total cost, given parameters $N$, $f$, $c$.
 Hence, numerical methods are applied to determine minimal cost, given numerical values of the parameters.
 
@@ -838,31 +863,34 @@ In order to derive parameter $f$ from bitcoin exchange rate $p$, we fix the P2MS
 This is motivated by the fact that 10 sat per byte can be considered a lower bound on the network's transaction cost, and assuming this value, P2MS method is the cheapest one.
 Accordingly, the final results of the following calculation can be interpreted as a reasonable lower bound.
 
-From this, as was already performed in section \ref{sec:parameters}, we define \[f = p \cdot (182\,\text{sat} + \SI{38.09}{\byte}\cdot 10\,\text{sat}\,\si{\per\byte}),\] that is, again, non-dust amount per address plus bytes occupied in the transaction multiplied with network fees.
+%From this, as was already performed in section \ref{sec:parameters}, we define \[f = p \cdot (182\,\text{sat} + \SI{38.09}{\byte}\cdot 10\,\text{sat}\,\si{\per\byte}),\] that is, again, non-dust amount per address plus bytes occupied in the transaction multiplied with network fees.
+As was already performed in section \ref{sec:parameters}, we can define parameter $f$ in units of sat, and multiply with $p$ to obtain parameter $f$ in terms of USD.
 Combining with given parameter $c$, let $C_\text{p2ms}(p,c)$ be the optimal relative inclusion cost in USD per byte, determined by numerically finding optimal prefix length $n$.
-For inclusion cost using fake keys we generalize our computation from previous section \ref{sec:comparison} and reach \[ C_\text{fake}(p) = p \cdot (\SI{65}{\byte})^{-1} \cdot (182\,\text{sat} + \SI{70.16}{\byte}\cdot 10\,\text{sat}\,\si{\per\byte}).\] (That is, transaction fee plus non-fee amount, divided by payload length of 65 bytes.)
+By same methods, we can generalize the inclusion cost using fake keys, as
+\[ C_\text{fake}(p) = \frac{N}{\SI{65}{\byte}} \cdot f_\text{p2fpk} \cdot p. \]
+Cf. with equation (\ref{eq:totalcost}) and table \ref{table:txtypes-parameters}.
 
-In order to state the effect of bitcoin price and computation cost quantitatively, we proceed with numerically computing $C_\text{p2ms}(p,c)$ for $c$ and $p$ in the previously fixed respective ranges; price $p$ in $10^{0.5}$-fold increments, $c$ in $10^{0.2}$-fold increments, yielding 272 data points.
+In order to state the effect of bitcoin price and computation cost quantitatively, we proceed with numerically computing $C_\text{p2ms}(p,c)$ for $c$ and $p$ in the previously fixed respective ranges; both price $p$ and $c$ in $10^{0.2}$-fold increments, yielding 416 data points.
 
 We continue by presenting a bivariate log-log regression model to explaining the dependent data points from the independent variables, that is,
 \begin{equation} \log_{10} \frac{C_\text{p2ms}(p, c)}{\text{USD}\,\si{\per\byte}} = \alpha + \beta \log_{10} \frac{p}{\text{USD}} + \gamma \log_{10} \frac{c}{\text{USD}} + \epsilon_i, \label{eq:regressionmodel}\end{equation}
 with unknown parameters $\alpha$, $\beta$, $\gamma$, and error terms $\epsilon_i$.
-Usual least-squares-error method provides $\alpha \approx \num{-5.5003}$, $\beta \approx\num{0.97284}$, $\gamma \approx\num{.026969}$.
+Usual least-squares-error method provides $\alpha \approx \num{-2.5546}$, $\beta \approx\num{0.97538}$, $\gamma \approx\num{.024585}$.
 
 
 It is explicitly to be remarked that this model does not precisely explain the data; this becomes clear when considering the visible patterns in the residual graph of this regression.
-Nevertheless, the model appears to be sufficiently precise to estimate the effect of the variables $p$, $c$ on relative inclusion cost: in fact, mean square error $\sum \epsilon_i^2/(n-2) < \num{e-4}$, and maximum residual is $\max |\epsilon_i| < 0.022$. Consequently, the model predicts inclusion cost with a relative error of at most \SI{5.2}{\percent}.
+Nevertheless, the model appears to be sufficiently precise to estimate the effect of the variables $p$, $c$ on relative inclusion cost: in fact, mean square error $< \num{5e-6}$, and maximum residual is $\max |\epsilon_i| < 0.0095$. Consequently, the model predicts inclusion cost with a relative error of at most \SI{2.22}{\percent}.
 See also figure \ref{figure:fit}, which plots observed data points against the fit in a log-log plot.
 
 Having established that model, we can derive from parameters $\beta$ and $\gamma$ following observations:
 First, as we expected, relative inclusion cost $C_\mathrm{p2ms}(p,c)$ is almost linear with respect to bitcoin price $c$.
 Since sub-linear, we expect that $C_\mathrm{p2ms}(p,c)$ continues to converge towards $C_\mathrm{fake}(p)$, which grows linear with respect to $p$.
-Nevertheless, this trend appears to be minor; a 100-fold bitcoin price increase lowers relative inclusion cost by no more than \SI{12}{\percent}.
+Nevertheless, this trend appears to be minor; a 100-fold bitcoin price increase lowers relative inclusion cost by no more than \SI{10.7}{\percent}.
 
-Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $100$, for example, would reduce relative inclusion cost by \SI{12}{\percent}. (Moore's law would estimate such cost decrease of factor $100$ in a time span of 13 years.)
+Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10$, for example, would reduce relative inclusion cost by \SI{5.50}{\percent}. (Moore's law would estimate such cost decrease of factor $10$ in a time span of 7 years.)
 
 We conclude: even though effectiveness of the proposed countermeasure decreases both with increasing bitcoin price and decreasing computational cost, effectiveness remains stable even for extreme values.
-For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{9.6}$.
+For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{8.2}$.
 
 %   \chapter{Cost of malicious attack}
 %   
@@ -1008,14 +1036,18 @@ For another, the inclusion of large data would significantly increase transactio
 
 \backmatter
 
+\phantomsection \label{listoffig}
 \addcontentsline{toc}{chapter}{\listfigurename}
 \listoffigures
 \cleardoublepage
+\phantomsection \label{listoftab}
 \addcontentsline{toc}{chapter}{\listtablename}
 \listoftables
 
 \cleardoublepage
-\printbibliography
+\phantomsection \label{biblio}
+\addcontentsline{toc}{chapter}{References}
+\printbibliography[title=References]
 %\phantomsection
 %\addcontentsline{toc}{chapter}{\bibname}
 
