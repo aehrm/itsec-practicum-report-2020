@@ -1,0 +1,239 @@
+
+@inproceedings{matzutt_quantitative_2018,
+	location = {Nieuwpoort, Curaçao},
+	title = {A Quantitative Analysis of the Impact of Arbitrary Blockchain Content on Bitcoin},
+	abstract = {Blockchains primarily enable credible accounting of digital events, e.g., money transfers in cryptocurrencies. However, beyond this original purpose, blockchains also irrevocably record arbitrary data, ranging from short messages to pictures. This does not come without risk for users as each participant has to locally replicate the complete blockchain, particularly including potentially harmful content. We provide the ﬁrst systematic analysis of the beneﬁts and threats of arbitrary blockchain content. Our analysis shows that certain content, e.g., illegal pornography, can render the mere possession of a blockchain illegal. Based on these insights, we conduct a thorough quantitative and qualitative analysis of unintended content on Bitcoin’s blockchain. Although most data originates from benign extensions to Bitcoin’s protocol, our analysis reveals more than 1600 ﬁles on the blockchain, over 99 \% of which are texts or images. Among these ﬁles there is clearly objectionable content such as links to child pornography, which is distributed to all Bitcoin participants. With our analysis, we thus highlight the importance for future blockchain designs to address the possibility of unintended data insertion and protect blockchain users accordingly.},
+	booksubtitle = {22nd International Conference, FC 2018},
+	author = {Matzutt, Roman and Hiller, Jens and Henze, Martin and Ziegeldorf, Jan Henrik and Hohlfeld, Oliver and Wehrle, Klaus},
+	date = {2018-02-28},
+	langid = {english},
+    booktitle="Financial Cryptography and Data Security",
+year="2018",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="420--438",
+%series={Security and Cryptology},
+%volume=10957,
+    doi={10.1007/978-3-662-58387-6_23},
+	file = {Matzutt et al. - A Quantitative Analysis of the Impact of Arbitrary.pdf:/home/anton/Dokumente/Zotero/storage/M5NYWIVT/Matzutt et al. - A Quantitative Analysis of the Impact of Arbitrary.pdf:application/pdf}
+}
+
+@incollection{fehr_chameleon-hashes_2017,
+	location = {Berlin, Heidelberg},
+	title = {Chameleon-Hashes with Ephemeral Trapdoors},
+	volume = {10175},
+	% isbn = {978-3-662-54387-0 978-3-662-54388-7},
+	abstract = {A chameleon-hash function is a hash function that involves a trapdoor the knowledge of which allows one to ﬁnd arbitrary collisions in the domain of the function. In this paper, we introduce the notion of chameleon-hash functions with ephemeral trapdoors. Such hash functions feature additional, i.e., ephemeral, trapdoors which are chosen by the party computing a hash value. The holder of the main trapdoor is then unable to ﬁnd a second pre-image of a hash value unless also provided with the ephemeral trapdoor used to compute the hash value. We present a formal security model for this new primitive as well as provably secure instantiations. The ﬁrst instantiation is a generic black-box construction from any secure chameleon-hash function. We further provide three direct constructions based on standard assumptions. Our new primitive has some appealing use-cases, including a solution to the long-standing open problem of invisible sanitizable signatures, which we also present.},
+	pages = {152--182},
+	booktitle = {Public-Key Cryptography – {PKC} 2017},
+	publisher = {Springer Berlin Heidelberg},
+	author = {Camenisch, Jan and Derler, David and Krenn, Stephan and Pöhls, Henrich C. and Samelin, Kai and Slamanig, Daniel},
+	editor = {Fehr, Serge},
+	urldate = {2019-06-03},
+	date = {2017},
+	langid = {english},
+	doi = {10.1007/978-3-662-54388-7_6},
+	file = {Camenisch et al. - 2017 - Chameleon-Hashes with Ephemeral Trapdoors.pdf:/home/anton/Dokumente/Zotero/storage/QLGWQ929/Camenisch et al. - 2017 - Chameleon-Hashes with Ephemeral Trapdoors.pdf:application/pdf}
+}
+
+@inproceedings{ateniese_redactable_2017,
+	location = {Paris, France},
+	title = {Redactable Blockchain – or – Rewriting History in Bitcoin and Friends},
+% 	% isbn = {978-1-5090-5762-7},
+	doi = {10.1109/EuroSP.2017.37},
+	abstract = {We put forward a new framework that makes it possible to re-write or compress the content of any number of blocks in decentralized services exploiting the blockchain technology. As we argue, there are several reasons to prefer an editable blockchain, spanning from the necessity to remove inappropriate content and the possibility to support applications requiring re-writable storage, to “the right to be forgotten.” Our approach generically leverages so-called chameleon hash functions (Krawczyk and Rabin, {NDSS} ’00), which allow determining hash collisions eﬃciently, given a secret trapdoor information. We detail how to integrate a chameleon hash function in virtually any blockchain-based technology, for both cases where the power of redacting the blockchain content is in the hands of a single trusted entity and where such a capability is distributed among several distrustful parties (as is the case with Bitcoin).},
+	% eventtitle = {2017 {IEEE} European Symposium on Security and Privacy ({EuroS}\&P)},
+	pages = {111--126},
+	booktitle = {2017 {IEEE} European Symposium on Security and Privacy ({EuroS}\&P)},
+	%publisher = {{IEEE}},
+	author = {Ateniese, Giuseppe and Magri, Bernardo and Venturi, Daniele and Andrade, Ewerton},
+    %urldate = {2019-06-03},
+	date = {2017-04},
+	langid = {english},
+	file = {Ateniese et al. - 2017 - Redactable Blockchain – or – Rewriting History in .pdf:/home/anton/Dokumente/Zotero/storage/8JJKHXWR/Ateniese et al. - 2017 - Redactable Blockchain – or – Rewriting History in .pdf:application/pdf}
+}
+
+@report{puddu_chain:_2017,
+	title = {{µchain: How to Forget without Hard Forks}},
+	abstract = {In this paper, we explore an idea of making (proof-of-work) blockchains mutable. We propose and implement µchain, a mutable blockchain, that enables modiﬁcations of blockchain history. Blockchains are, by common deﬁnition, distributed and immutable data structures that store a history of events, such as transactions in a digital currency system. While the very idea of mutable event history may seem controversial at a ﬁrst glance, we show that µchain does not undermine security guarantees provided by immutable blockchains. In particular, all mutations in our system are controlled by ﬁat, enforced by consensus and are veriﬁable in the same way as regular transactions. At the same time, µchain provides a solution to a number of challenging problems, such as the patching of vulnerable smart contracts and removal of abusive content from blockchain history. It also gives rise to new blockchain applications that were not possible with immutable blockchains. For instance, governments and companies could now maintain registers of citizens and customers, while preserving their legislated rights to be forgotten. Banks could consider consolidation of cryptocurrency with traditional payments, which is hard to achieve without the ability to revert transactions. To further illustrate the power of µchain on more concrete examples, we present two new applications, the collaborative recommendation system with the ability to censor inappropriate content, and a time-lock encryption mechanism that provides a method to decrypt messages after a certain deadline has passed.},
+    archivePrefix = {Cryptology ePrint Archive},
+    eprint= {2017/106},
+    url={https://eprint.iacr.org/2017/106},
+	author = {Puddu, Ivan and Dmitrienko, Alexandra and Capkun, Srdjan},
+	date = {2017},
+	langid = {english},
+	file = {Puddu et al. - µchain How to Forget without Hard Forks.pdf:/home/anton/Dokumente/Zotero/storage/7IRV2TSU/Puddu et al. - µchain How to Forget without Hard Forks.pdf:application/pdf}
+}
+
+@inproceedings{matzutt_poster:_2016,
+	location = {Vienna, Austria},
+	title = {{POSTER}: I Don't Want That Content! On the Risks of Exploiting Bitcoin's Blockchain as a Content Store},
+	% isbn = {978-1-4503-4139-4},
+	doi = {10.1145/2976749.2989059},
+	shorttitle = {{POSTER}},
+	abstract = {Bitcoin has revolutionized digital currencies and its underlying blockchain has been successfully applied to other domains. To be veriﬁable by every participating peer, the blockchain maintains every transaction in a persistent, distributed, and tamper-proof log that every participant needs to replicate locally. While this constitutes the central innovation of blockchain technology and is thus a desired property, it can also be abused in ways that are harmful to the overall system. We show for Bitcoin that blockchains potentially provide multiple ways to store (malicious and illegal) content that, once stored, cannot be removed and is replicated by every participating user. We study the evolution of content storage in Bitcoin’s blockchain, classify the stored content, and highlight implications of allowing the storage of arbitrary data in globally replicated blockchains.},
+	% eventtitle = {the 2016 {ACM} {SIGSAC} Conference},
+	pages = {1769--1771},
+	booktitle = {Proceedings of the 2016 {ACM} {SIGSAC} Conference on Computer and Communications Security - {CCS}'16},
+	publisher = {{ACM} Press},
+	author = {Matzutt, Roman and Hohlfeld, Oliver and Henze, Martin and Rawiel, Robin and Ziegeldorf, Jan Henrik and Wehrle, Klaus},
+	%urldate = {2019-06-03},
+	date = {2016},
+	langid = {english},
+	file = {Matzutt et al. - 2016 - POSTER I Don't Want That Content! On the Risks of.pdf:/home/anton/Dokumente/Zotero/storage/9JZRTL5V/Matzutt et al. - 2016 - POSTER I Don't Want That Content! On the Risks of.pdf:application/pdf}
+}
+
+@article{sward_data_2018,
+	title = {Data Insertion in Bitcoin's Blockchain},
+	volume = {3},
+	rights = {Copyright (c) 2018 Andrew Sward, Vecna, Forrest Stonedahl},
+	issn = {2379-5980},
+	doi = {10.5195/ledger.2018.101},
+	abstract = {This paper provides the first comprehensive survey of methods for inserting arbitrary data into Bitcoin’s blockchain. Historical methods of data insertion are described, along with lesser-known techniques that are optimized for efficiency. Insertion methods are compared on the basis of efficiency, cost, convenience of data reconstruction, permanence, and potentially negative impact on the Bitcoin ecosystem.},
+	journaltitle = {Ledger},
+	author = {Sward, Andrew and Vecna, Ivy and Stonedahl, Forrest},
+	%urldate = {2019-06-06},
+	date = {2018-04-03},
+	langid = {english},
+	keywords = {Blockchain, Coinbase, Data Publication, Free Speech, {OP}\_RETURN, Script, Transaction Malleability},
+	file = {Full Text PDF:/home/anton/Dokumente/Zotero/storage/CLYE74YC/Sward et al. - 2018 - Data Insertion in Bitcoin's Blockchain.pdf:application/pdf;Snapshot:/home/anton/Dokumente/Zotero/storage/AVZL5SII/101.html:text/html}
+}
+
+@thesis{seeg_hardening_2018,
+	title = {Hardening Bitcoin against off-topic data inclusion attacks},
+	institution = {Universität Würzburg},
+	type = {Master thesis},
+	author = {Seeg, Andreas},
+	date = {2018},
+	langid = {english},
+	file = {Seeg - Hardening Bitcoin against off-topic data inclusion.pdf:/home/anton/Dokumente/Zotero/storage/K64A9SW8/Seeg - Hardening Bitcoin against off-topic data inclusion.pdf:application/pdf}
+}
+
+@book{antonopoulos_mastering_2017,
+	location = {Sebastopol, {CA}},
+	edition = {Second edition},
+	title = {Mastering Bitcoin: programming the open blockchain},
+	isbn = {978-1-4919-5438-6},
+    shorttitle = {Mastering Bitcoin},
+	abstract = {"Join the technological revolution that's taking the world of finance by storm. Mastering Bitcoin is your guide through the seemingly complex world of Bitcoin, providing the knowledge you need to participate in the internet of money. Whether you're building the next killer app, investing in a startup, or simply curious about the technology, this revised and expanded second edition provides essential detail to get you started. Bitcoin, the first successful decentralized digital currency, is still in its early stages and yet it's already spawned a multi-billion dollar global economy. This economy is open to anyone with the knowledge and passion to participate. Mastering Bitcoin provides the knowledge. You simply supply the passion."--Provided by Amazon.com},
+	%pagetotal = {371},
+	publisher = {O'Reilly},
+	author = {Antonopoulos, Andreas M.},
+	date = {2017},
+	%note = {{OCLC}: ocn953432201},
+	keywords = {Computer programs, Bitcoin, {BUSINESS} \& {ECONOMICS}, {COMPUTERS}, E-Commerce, Electronic commerce, Electronic Commerce, Electronic funds transfers, Entrepreneurship, Finance, Money, Money \& Monetary Policy, Security Cryptography},
+	file = {Antonopoulos - Mastering Bitcoin.pdf:/home/anton/Dokumente/Zotero/storage/AN8TWTRJ/Antonopoulos - Mastering Bitcoin.pdf:application/pdf}
+}
+
+@inbook{nakamoto_bitcoin_2008,
+    author = {Satoshi Nakamoto},
+    title = {Bitcoin: A Peer-to-Peer electronic cash system},
+    year = {2008},
+    crossref = {antonopoulos_mastering_2017},
+    %chapter = {Appendix A},
+    pages = {305-316},
+    note = {reprint of the original}
+}
+
+@inproceedings{matzutt_thwarting_2018,
+	location = {Orlando, {FL}},
+	title = {Thwarting Unwanted Blockchain Content Insertion},
+	% isbn = {978-1-5386-5008-0},
+	doi = {10.1109/IC2E.2018.00070},
+	abstract = {Since the introduction of Bitcoin in 2008, blockchain systems have seen an enormous increase in adoption. By providing a persistent, distributed, and append-only ledger, blockchains enable numerous applications such as distributed consensus, robustness against equivocation, and smart contracts. However, recent studies show that blockchain systems such as Bitcoin can be (mis)used to store arbitrary content. This has already been used to store arguably objectionable content on Bitcoin’s blockchain. Already single instances of clearly objectionable or even illegal content can put the whole system at risk by making its node operators culpable. To overcome this imminent risk, we survey and discuss the design space of countermeasures against the insertion of such objectionable content. Our analysis shows a wide spectrum of potential countermeasures, which are often combinable for increased efﬁciency. First, we investigate special-purpose content detectors as an ad hoc mitigation. As they turn out to be easily evadable, we also investigate content-agnostic countermeasures. We ﬁnd that mandatory minimum fees as well as mitigation of transaction manipulability via identiﬁer commitments signiﬁcantly raise the bar for inserting harmful content into a blockchain.},
+	% eventtitle = {2018 {IEEE} International Conference on Cloud Engineering ({IC}2E)},
+	pages = {364--370},
+	booktitle = {2018 {IEEE} International Conference on Cloud Engineering ({IC}2E)},
+	%publisher = {{IEEE}},
+	author = {Matzutt, Roman and Henze, Martin and Ziegeldorf, Jan Henrik and Hiller, Jens and Wehrle, Klaus},
+	%urldate = {2020-04-04},
+	date = {2018-04},
+	langid = {english},
+	file = {Matzutt et al. - 2018 - Thwarting Unwanted Blockchain Content Insertion.pdf:/home/anton/Dokumente/Zotero/storage/XGUQ4F8M/Matzutt et al. - 2018 - Thwarting Unwanted Blockchain Content Insertion.pdf:application/pdf}
+}
+
+@online{bitcoinwiki_weaknesses_2011,
+    author={{Bitcoin Wiki}},
+    title={Weaknesses},
+    year={2011},
+    url = {https://en.bitcoin.it/w/index.php?title=Weaknesses&oldid=14350},
+    urldate = {2020-07-03}
+}
+@online{bitcoinwiki_prohibited_2016,
+    author={{Bitcoin Wiki}},
+    title={Prohibited changes},
+    year={2016},
+    url = {https://en.bitcoin.it/w/index.php?title=Prohibited_changes&oldid=60827},
+    urldate = {2020-07-03}
+}
+
+@online{bitcoinwiki_principles_2017,
+    author={{Bitcoin Wiki}},
+    title={Principles of Bitcoin},
+    year={2017},
+    url = {https://en.bitcoin.it/w/index.php?title=Principles_of_Bitcoin&oldid=63920},
+    urldate = {2020-07-03}
+}
+
+@online{bruce_miniblockchain_2017,
+    author={J. Douglas Bruce},
+    title={The Mini-Blockchain Scheme},
+    organization={{Cryptonite.info}},
+    year={2017},
+    url = {https://cryptonite.info/files/mbc-scheme-rev3.pdf},
+    urldate = {2020-07-03}
+}
+
+@online{vanitysearch_2019,
+    author={Jean-Luc Pons},
+    title={{VanitySearch}},
+    year={2019},
+    organization={{GitHub.com}},
+    url={https://github.com/JeanLucPons/VanitySearch},
+    urldate={2020-07-06},
+}
+
+@online{hashcat_2020,
+    author={Jens Steube and Philipp Schmidt and Gabriele Gristina and Jean-Christophe Delaunay and Jeremi Gosney},
+    title={Hashcat},
+    year={2020},
+    url={https://hashcat.net/hashcat/},
+    urldate={2020-07-03},
+}
+
+@online{forums_vanitysearch,
+    author={{DaveF (pseudo.)}},
+    title={{Re: VanitySearch (Yet another address prefix finder)}},
+    url={https://bitcointalk.org/index.php?topic=5112311.msg50823897#msg50823897},
+    organization={{Bitcointalk.org}},
+    note={response \#299},
+    urldate={2020-07-04},
+    date={2019-04-29}
+}
+
+@online{gosney_1080ti,
+    title={{8x Nvidia GTX 1080 Ti Hashcat Benchmarks}},
+    author={Jeremi M. Gosney},
+    organization={{GitHub.com}},
+    url={https://gist.github.com/epixoip/ace60d09981be09544fdd35005051505},
+    urldate={2020-07-04},
+    date={2020-04-29}
+}
+
+@online{celik_2080ti,
+    title={{2x 2080 Ti Hashcat Benchmarks}},
+    author={Mucteba Celik},
+    organization={{GitHub.com}},
+    url={https://gist.github.com/codeandsec/1c1f2c7bd81abba6fa9736b061944675},
+    urldate={2020-07-04},
+    date={2018-10-24}
+}
+
+@online{bernstein_benchmark,
+    editor={Daniel J. Bernstein and Tanja Lange},
+    title={{Measurements of hash functions, indexed by machine}},
+    url={https://bench.cr.yp.to/results-hash.html},
+    organization={{ECRYPT Benchmarking of Cryptographic Systems}},
+    date={2020-07-03},
+    urldate={2020-07-06}
+}
