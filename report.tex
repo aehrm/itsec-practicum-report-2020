@@ -75,7 +75,7 @@
     draw={rgb,1:red,0.528488;green,0.470624;blue,0.701351},thick\\%
 }
 
-\newcommand{\docType}{Master Report} % select your thesis type
+\newcommand{\docType}{Master Practicum Report} % select your thesis type
 \newcommand{\mainTitle}{Evaluating the effect on countermeasures preventing the inclusion of off-topic data into Bitcoin's\\ blockchain}
 \newcommand{\authorName}{Anton Ehrmanntraut}
 \newcommand{\reviewerOneName}{Prof. Dr. Alexandra Dmitrienko}
@@ -131,7 +131,7 @@
 \include{titlepage}
 \setmarginsrb{3cm}{1cm}{3cm}{1cm}{6mm}{7mm}{5mm}{15mm}
 \chapter*{Abstract}
-Blockchain-based cryptocurrencies use this data structure as persistent, distributed, append-only, and timestamped ledger.
+Blockchain-based cryptocurrencies use the blockchain data structure as persistent, distributed, append-only, and timestamped ledger.
 These properties make blockchains attractive to use as storage for data that is not related to the payment processing itself.
 In the case of Bitcoin's blockchain, recent studies show that this inclusion of off-topic data has already been executed in practice.
 In fact, arguably objectionable content is already stored on Bitcoin's blockchain;
@@ -156,7 +156,7 @@ Hence, using publicly available benchmark figures, we estimate the cost of the c
 \chapter{Introduction}
 
 Bitcoin, the decentralized, distributed, pseudonymous P2P electronic cash system introduced in 2009, makes use of blockchains, distributed data structures, as permanent tamper-proof and append-only log of transactions, enforcing irreversibility of these transactions.
-By design, the blockchain is distributed to all users of the Bitcoin, and specifically every user maintains a local copy of the entire blockchain. \cite[Cf.][]{nakamoto_bitcoin_2008}
+By design, the blockchain is distributed to all users of the Bitcoin, and specifically every user maintains a local copy of the entire blockchain, cf.\@ \cite{nakamoto_bitcoin_2008}.
 
 The beneficial properties of the blockchain storage – distributed, tamper-proof, timestamped, among others – have incentivized actors to use Bitcoin's blockchain as permanent storage of data unrelated to Bitcoin's payment processing.
 \begin{displayquote}
@@ -164,21 +164,21 @@ The beneficial properties of the blockchain storage – distributed, tamper-proo
     of a file in such a way that anyone could establish proof-of-existence of that file on a specific date by reference to that transaction,
 \end{displayquote}
 Antonopoulos notices. He continues by outlining the debate behind such use.
-\begin{displaycquote}{antonopoulos_mastering_2017}
+\begin{displaycquote}[155]{antonopoulos_mastering_2017}
     The use of bitcoin’s blockchain to store data unrelated to bitcoin payments is a controversial subject.
     Many developers consider such use abusive and want to discourage it.
     Others view it as a demonstration of the powerful capabilities of blockchain technology and want to encourage such experimentation. Those who object to the inclusion of nonpayment data argue that it causes \enquote{blockchain bloat,} burdening those running full bitcoin nodes with carrying the cost of disk storage for data that the blockchain was not intended to carry.
 \end{displaycquote}
-While most such inclusions of off-topic data in practice are negligible in size and content, more sophisticated methods allowed actors to include entire files such as images, or PDF files. \cite{matzutt_quantitative_2018}
+While most such inclusions of off-topic data in practice are negligible in size and content, more sophisticated methods allowed actors to include entire files such as images, or PDF files \cite{matzutt_quantitative_2018}.
 
-Besides the issues already mentioned by Antonopoulos (general bloat of blockchain and payment processing), the Bitcoin community observed potential legal issues in connection with this data inclusions. \cite{bitcoinwiki_weaknesses_2011}
+Besides the issues already mentioned by Antonopoulos (general bloat of blockchain and payment processing), the Bitcoin community observed potential legal issues in connection with this data inclusions.~\cite{bitcoinwiki_weaknesses_2011}\@
 Illegal content in the blockchain makes participants of the network legally liable, who need to maintain a copy of the blockchain for operation.
 
 Hence, the insertion of objectionable content has the potential to jeopardize Bitcoin (and generalizing, all blockchain-based cryptocurrencies), rendering participation illegal in certain jurisdictions.
-Seeg observes that these deliberate inclusions have the possibility to manipulate the bitcoin price, i.e.\@ expecting falling prices caused by endangered legality, and hence give an attacker serious financial incentive for executing such an attack, inserting malicious data, and profiting off, e.g.,\@ futures contracts. \cite[1--2]{seeg_hardening_2018}
+Seeg also observes that these deliberate inclusions have the possibility to manipulate the bitcoin price, i.e.\@ expecting falling prices caused by endangered legality, and hence give an attacker serious financial incentive for executing such an attack, inserting malicious data, and profiting off, e.g.,\@ futures contracts \cite[1--2]{seeg_hardening_2018}.
 
 Several approaches were discussed to prevent this type of off-topic data inclusion.
-These range from monitoring incoming data \cite[chap.~IV.A]{matzutt_thwarting_2018}, consensus-based deletions of harmful portions of the blockchain \cites{ateniese_redactable_2017}{puddu_chain:_2017}, 
+These range from monitoring incoming data \cite[Sec.~IV.A]{matzutt_thwarting_2018}, consensus-based deletions of harmful portions of the blockchain \cites{ateniese_redactable_2017}{puddu_chain:_2017}, 
 or maintaining balances instead of transactions \cite{bruce_miniblockchain_2017}.
 %Matzutt et al.\@ first observed that maintaining pseudonymity implies that no countermeasure can comprehensively detect all unintended data.
 
@@ -246,7 +246,7 @@ Finally, section 5 concludes with a summary of the findings, and discusses poten
 \chapter{Data inclusion in the blockchain}
 
 This section describes the state-of-the-art method how the transaction structure of the Bitcoin blockchain enables the inclusion of arbitrary data in the blockchain.
-For this, we first outline the transaction processing of the Bitcoin network on the basis on its scripting language. Then, describe the techniques how this structure can be exploited for data inclusion, and sensibly restrict our considerations on one specific technique type.
+For this, we first outline the transaction processing of the Bitcoin network on the basis on its scripting language. Then, describes the techniques how this structure can be exploited for data inclusion, and sensibly restrict our considerations on one specific technique type.
 
 
 \section{Transaction structure and processing}
@@ -256,12 +256,12 @@ For this, we first outline the transaction processing of the Bitcoin network on 
 
 In the Bitcoin network, the transfer of electronic coins is realized using \emph{transactions}.
 From a structural perspective, every transaction specifies a set of \emph{transaction input} and a set of \emph{transaction outputs}, with every input referencing a previous transaction's output.
-Following these references, each transaction can be considered the root of a directed acyclic graph, where transactions are considered vertices, and its references the directed edges.
+Following these references, each transaction can be considered as a vertex of a directed acyclic graph, where  its references the directed edges. Sources of that graph correspond to (mined) coinbase transactions.
 
 To give this transaction authenticity, an eligible user attaches to each reference some form of digital signature.
 By verifying each signature associated with the preceding transactions in the graph, one can follow and verify the chain of ownership of the coins.
 Hence, strictly speaking, \textquote*{ownership of coins} in the Bitcoin network is the ability to create a transaction referencing outputs not already references, using ownership of private keys to generate valid signatures.
-Using the blockchain as a timestamping server prevents double-spending of transaction outputs (that is, ensures that indegree of every transaction in the graph is 1).
+Using the blockchain as a timestamping server prevents double-spending of transaction outputs.
 
 Bitcoin implements the authenticity system of these references using a challenge–response authentication between the referenced transaction outputs and the transaction inputs.
 
@@ -274,16 +274,16 @@ Bitcoin implements the authenticity system of these references using a challenge
 
 Bitcoin provides several methods for implementing locking and unlocking scripts, and as example, the widespread pay-to-public-key script types are presented: In this scenario, a payee Bob expects the payer Alice to publish a valid transaction with his public key embedded in the locking script of an output $x$.
 Then, to transfer these coins to Charlie, Bob constructs a transaction $t$ with an input referencing $x$, adding to the unlocking script a signature of message $t$, signed with his private key, corresponding to the public key embedded in $x$.
-Then Bob can add the output with the locking script expected by Charlie, and submit the transaction. \cite[Cf.\@ chap.~6--7]{antonopoulos_mastering_2017}
+Then Bob can add the output with the locking script expected by Charlie, and submit the transaction; cf.\@ \cite[Chap.~6--7]{antonopoulos_mastering_2017}.
 
 
 The network verifies this reference by checking the signature of the unlocking script against the public key embedded in the locking script.
 
 
-Bitcoin employs a \emph{Elliptic Curve Digital Signature Algorithm} (using parameters from SEC2-secpk256k1) as implementation op a public-key system.
+Bitcoin employs a \emph{Elliptic Curve Digital Signature Algorithm} (using parameters from SEC2-secpk256k1) as implementation of a public-key system.
 Henceforth, we refer to $G\in \mathbb{F}_p^2$ as the base point of the elliptic curve group (over the finite field of prime order $p$). For $x\in \mathbb{N}$, let $x\cdot G$ denote the elliptic curve point multiplication by a scalar.
 
-Following table summarizes the five standard locking script types (i.e.\@ address types) with their corresponding unlocking script. Any other forms of locking scripts are currently being rejected by network participants.
+Following table \ref{table:script-types} summarizes the five standard locking script types (i.e.\@ address types) with their corresponding unlocking script. Any other forms of locking scripts are currently being rejected by network participants.
 Hash function $H$ is implemented in Bitcoin as composition of first SHA256, followed by RIPEMD160.
 
 \begin{table}
@@ -322,7 +322,7 @@ Hence the locking and unlocking scripts of every transaction are stored in the b
 
 \subsubsection*{Inclusion on outputs\,/\,locking scripts}
 
-Null Data transactions already give actors the possibility to create (unspendable) transactions that contain up to \SI{80}{\byte} of arbitrary data payload. This imposed size limit is deliberately low to limit blockchain bloat, and to make this inclusion costly and not suitable for large quantities of data. \cite[Cf.][155--156]{antonopoulos_mastering_2017}
+Null Data transactions already give actors the possibility to create (unspendable) transactions that contain up to \SI{80}{\byte} of arbitrary data payload. This imposed size limit is deliberately low to limit blockchain bloat, and to make this inclusion costly and not suitable for large quantities of data; cf.\@ \cite[155--156]{antonopoulos_mastering_2017}.
 
 Therefore, more sophisticated techniques for data inclusion build upon the fact, that the network does not, and cannot test if the variable parts of the locking scripts, e.g.\@ pubkey(s) $x\cdot G$ in P2PK (P2MS) transactions, hashes $H(x\cdot G)$, $H(s)$ in P2PKH, P2SH transactions, are in fact, generated using the usual intended way.
 For example, consider payload $y$ of \SI{65}{\byte}.
@@ -337,7 +337,7 @@ Again considering payload $y$, they construct a specialized redeem script $s$ an
 such that $y$ is a substring in $s'$.
 To now perform the inclusion into the blockchain, first one publishes a transaction containing P2SH output with $H(s)$, then another transaction referencing this output, containing $s'$ as unlocking script.
 This results in two valid transactions, and even require no burnt coins.
-In fact, Sward et al. showed that this technique outperforms every known inclusion technique using locking scripts, given the fact that unlocking scripts have a much higher size limitation in comparison to locking scripts, which have a fixed format. \cite{sward_data_2018}
+In fact, Sward et al.\@ showed that this technique outperforms every known inclusion technique using locking scripts, given the fact that unlocking scripts have a much higher size limitation in comparison to locking scripts, which have a fixed format \cite{sward_data_2018}.
 
 Nevertheless, we will exclude an analysis of this inclusion technique in this report.
 These complex transaction types might be the easiest to ban or limit, if data inclusion using P2SH were to become a problem.
@@ -374,7 +374,7 @@ While there is no central authority stating these properties, the corresponding 
         \item Permissionless: No arbitrary gatekeepers should ever prevent anybody from being part of the network (user, node, miner, etc).
         \item Pseudonymous: No ID should be required to own, use Bitcoin.
         \item Fungible: All coins are equal and should be equally spendable.
-        \item Irreversible Transactions: Confirmed blocks should be set in stone. Blockchain History should be immutable. \cite{bitcoinwiki_principles_2017}
+        \item Irreversible Transactions: Confirmed blocks should be set in stone. Blockchain History should be immutable \cite{bitcoinwiki_principles_2017}.
     \end{enumerate}
 \end{displayquote}
 The mentioned countermeasures above would contradict principles 4, 7, at least.
@@ -393,14 +393,14 @@ While (b) and (c) could allow for further consensus-approved content filters dec
 
 Hence, without loss of generality, we need to assume a submitted destination address as clean if the owner of that address can prove the existence of the corresponding private key, that is, ownership of the address.
 
-Matzutt et al.\@ already pointed out that, under this setup, pseudonymous identifiers (cf.\@ with principle 5) always open the possibility to insert data by encoding them into these identifies: no matter how \textquote*{existence of the private key} is implemented, users willing to insert content into the blockchain always have the possibility to generate arbitrarily many addresses until suitable ones encoding the content are found. \cite[sec.~III.C]{matzutt_thwarting_2018}
+Matzutt et al.\@ already pointed out that, under this setup, pseudonymous identifiers (cf.\@ with principle 5) always open the possibility to insert data by encoding them into these identifies: no matter how \textquote*{existence of the private key} is implemented, users willing to insert content into the blockchain always have the possibility to generate arbitrarily many addresses until suitable ones encoding the content are found \cite[Sec.~III.C]{matzutt_thwarting_2018}.
 
 Following section introduces a Proof-of-ownership countermeasure that appears to be the strongest one respecting these propositions, motivating the evaluation of this countermeasure and its circumvention, which directly incorporates the approach outlined by Matzutt et al.
 
 
 \section{Proof-of-ownership countermeasure}
 
-In his Master's thesis \emph{Hardening Bitcoin against off-topic data inclusion}, Seeg proposes a countermeasure to this problem using a proof-of-ownership mechanism, which he calls \textquote{preimage solution}. \cite{seeg_hardening_2018}
+In his Master's thesis \emph{Hardening Bitcoin against off-topic data inclusion}, Seeg proposes a countermeasure to this problem using a proof-of-ownership mechanism, which he calls \textquote{preimage solution} \cite{seeg_hardening_2018}.
 %He observes that \textquote{variants that store data in standard transactions output can be mitigated by requiring proof that the variable parts}, that is, public keys (P2PK), public key hashes (P2PKH), script hashes (P2SH), \textquote{of the standard transactions are clean.}
 %
 He considers an address as clean (i.e.\@ without arbitrary data) if and only if the owner of that address can prove control, that is, ownership of the address.
@@ -430,7 +430,7 @@ and this countermeasure appropriately takes respective signatures $\sigma$ as su
 Addresses that withstand the proposed test hence are precisely the addresses that are derived from private keys.
 
 %This further motivates an evaluation of the proposed countermeasure.
-Additionally, other countermeasures that respect these mentioned principles build on top of the one-way property of the same cryptographic functions in a similar matter, e.g.\@ \textquote{self-verifying account identifiers} proposed by Matzutt et al. \cite[sec.~IV.D]{matzutt_thwarting_2018}
+Additionally, other countermeasures that respect these mentioned principles build on top of the one-way property of the same cryptographic functions in a similar matter, e.g.\@ \textquote{self-verifying account identifiers} proposed by Matzutt et al.\@ \cite[Sec.~IV.D]{matzutt_thwarting_2018}.
 Therefore, this countermeasure and the respective circumvention act as representative for all one-way-based approaches.
 
 \section{Circumvention using partial preimages}
@@ -481,7 +481,7 @@ That is, including payload data into the blockchain, where the data is embedded 
 Additionally, following procedure generates private keys to each of the used output addresses, such that proofs of ownership can be deduced as required in the countermeasure, and hence the generated transactions are approved.
 It is to be noted, that, in the context of Seeg's proposal, investing in a rainbow table could significantly increase performance in comparison to a full brute force approach.
 Nevertheless we omit rainbow tables, since this issue could easily be solved when refining the countermeasure, e.g.\@ including transaction hash in the proof message $m$ to be signed.
-Cf.\@ with the \textquote{freshness property} in the approach proposed by Matzutt et al. \cite[368--369]{matzutt_thwarting_2018}
+Cf.\@ with the \textquote{freshness property} in the approach proposed by Matzutt et al.\@ \cite[368--369]{matzutt_thwarting_2018}.
 
 The procedure is given with a chosen prefix length $n$. Performance and cost directly depend on this parameter, and a fit choice for $n$ is discussed in the next section.
 Without loss of generality, we assume the payload length to be a multiple of $n$.
@@ -601,7 +601,7 @@ For this, we estimate the parameter indirectly using hashrates reported by users
         \bottomrule
     \end{tabular}
     \caption[Overview of the different transaction types]{Overview of the different transaction types. 
-        Second column denotes the scripts size for a transaction output, holding an address (resp. three addresses in the case of multisig),
+        Second column denotes the scripts size for a transaction output, holding an address (resp.\@ three addresses in the case of multisig),
         third column the maximum payload length per address.
         Fourth column gives how many addresses can be gathered in a single transaction (not exceeding the size limit of \protect\SI{100}{\kilo\byte}),
         fifth column the total cost for submitting this transaction, that is with smallest non-dust amount (546 sat) per output plus transaction fees of 10 sat per byte.
@@ -613,7 +613,7 @@ The fees required for publishing the address into the blockchain, i.e.\@ paramet
 For this, we construct the largest possible transaction  using a single P2PK coinbase input to fund the outputs with non-dust burns, and adding outputs until reaching network's size limit of $\SI{100}{\kilo\byte}$.
 Multiplying with miner's transaction fees, and adding smallest non-dust burn amount to each output yields the value for parameter $f$.
 Table \ref{table:txtypes-parameters} gives this parameter in absolute values for all three methods, using transaction fees and Bitcoin exchange rate at point of publication.
-That is, network's transaction fee of 10 sat per byte, and \num{7.9e3} USD per bitcoin.
+That is, network's transaction fee of 10 sat per byte, and 8000 USD per bitcoin.
 Note that the P2MS strategy, arranging pubkeys in 1-of-3 multisig outputs, is currently the least expensive one in terms of fees required.
 Even though multisig outputs cause more overhead in the constructed transaction, required non-dust amount is counted per output, hence, grouping three pubkeys into one transaction output saves on burnt bitcoins.
 
@@ -624,15 +624,15 @@ Since the P2PK method performs worst in this regard, we discard this method and 
     \centering
     \begin{tabular}{lr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.2e-2,table-number-alignment=right]l}
         \toprule
-        \textbf{Hardware} & \multicolumn{1}{r}{\textbf{wattage}} &\multicolumn{2}{r}{\textbf{est. freq.}} & \multicolumn{1}{r}{\textbf{$c$ in USD}} & \textbf{ref.}\cr
+        \textbf{Hardware} & \multicolumn{1}{r}{\textbf{wattage}} &\multicolumn{2}{r}{\textbf{est.\@ freq.}} & \multicolumn{1}{r}{\textbf{$c$ in USD}} & \textbf{ref.}\cr
         %\midrule
         \midrule
         \emph{P2PKH} \cr
-              GTX 1660 TI  & 120 & 960 & \si{\mega\hertz} & 4.51e-15 &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
-              GTX 1650  & 75 & 510 & \si{\mega\hertz} & 5.31e-15 &  \cite[][cf.~\#374]{forums_vanitysearch}\cr
-              RTX 2080 Super  & 250 & 2000 & \si{\mega\hertz} & 4.51e-15 &  \cite[][cf.~\#396]{forums_vanitysearch}\cr
-              RTX 2080 TI (MSI) & 300 & 2500 & \si{\mega\hertz} & 4.33e-15 &  \cite[][cf.~\#343]{forums_vanitysearch}\cr
-              Tesla V100-SXM3-32GB  & 300 & 2500 & \si{\mega\hertz} & 4.33e-15 &  \cite[][cf.~\#619]{forums_vanitysearch}\cr
+              GTX 1660 TI  & 120 & 960 & \si{\mega\hertz} & 4.51e-15 &  \cite[][\#396]{forums_vanitysearch}\cr
+              GTX 1650  & 75 & 510 & \si{\mega\hertz} & 5.31e-15 &  \cite[][\#374]{forums_vanitysearch}\cr
+              RTX 2080 Super  & 250 & 2000 & \si{\mega\hertz} & 4.51e-15 &  \cite[][\#396]{forums_vanitysearch}\cr
+              RTX 2080 TI (MSI) & 300 & 2500 & \si{\mega\hertz} & 4.33e-15 &  \cite[][\#343]{forums_vanitysearch}\cr
+              Tesla V100-SXM3-32GB  & 300 & 2500 & \si{\mega\hertz} & 4.33e-15 &  \cite[][\#619]{forums_vanitysearch}\cr
         \midrule
         \emph{P2SH} \cr
         GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.76e-15 & \cite{gosney_1080ti} \cr 
@@ -646,7 +646,7 @@ Since the P2PK method performs worst in this regard, we discard this method and 
 \end{table}
 
 For the {P2PKH} method, we can rely on user reports on their performance using the tool \emph{VanitySearch}, which allows users to create \emph{vanity addresses}.
-These Bitcoin addresses contain a human-readable message as prefix in their Base-58 representation. \cite[Cf.][82--83]{antonopoulos_mastering_2017}
+These Bitcoin addresses contain a human-readable message as prefix in their Base-58 representation; cf.\@ \cite[82--83]{antonopoulos_mastering_2017}.
 Similarly to the presented tool in previous section, \emph{VanitySearch} brute-forces private keys, until the hashed public key has the desired prefix;
 this public key hash is precisely the one used to create {P2PKH} hashes.
 
@@ -659,7 +659,7 @@ We assume an energy cost of \num{.13} USD per \si{\kilo\watt\hour}.
 
 %\subsubsection*{P2SH hash cost estimation}
 In a similar matter, one can use the performances in computing {SHA256} digests as estimation for the cost of the {P2SH} method.
-As was outlined in previous section, the brute-force procedure for the {P2SH} method constructs from nonce candidate $x$ a 57-byte long redeem script $s(x)$, and computes the {P2SH} address as the hash digest 
+As was outlined in previous section, the brute-force procedure for the {P2SH} method constructs from nonce candidate $x$ a 57-byte long redeem script $s(x)$, and computes the {P2SH} address as the hash digest $H(x)$, that is by definition
 \begin{equation}
     x \mapsto \text{{RIPEMD160}}(\text{{SHA256}}(s(x))).\label{eq:p2sh-hash}
 \end{equation}
@@ -729,7 +729,7 @@ To begin with, we choose following rough but sensible estimates for computation 
 We estimate $c_\text{ms}=c_\text{pkh}=c_\text{p2pkh}=\num{4.50e-13}$ USD, $c_\text{sh} = \num{3.00e-15}$ USD.
 Also stated in previous section, fee parameter $f$ directly follows from Bitcoin exchange rate and mining fees, and is displayed in table \ref{table:txtypes-parameters}.
 
-From the results of Sward et al., we can infer that the best present method of including arbitrary data using fake addresses exploits fake public keys (in their extended 65 byte representation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures (P2FMS). \cite[cf.~also table 3]{sward_data_2018}
+From the results of Sward et al., we can infer that the best present method of including arbitrary data using fake addresses exploits fake public keys (in their extended 65 byte representation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures (P2FMS); cf.\@ also \cite[Table 3]{sward_data_2018}.
 Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\byte}$, and computing $f$ identically to previous procedure (see also table table \ref{table:txtypes-parameters}).
 This gives us a constant cost efficiency of \num{1.09} USD$\,\si{\per\kilo\byte}$ as benchmark.
 
@@ -751,7 +751,7 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
     \centering
     \begin{tabular}{lrS[table-format=0.4,table-alignment=right]S[table-format=2.2,table-alignment=right]}
         \toprule
-        & {\textbf{\llap{opt. prefix}}} & {\textbf{exp. cost in}} & \textbf{{rel. increase}}\cr
+        & {\textbf{\llap{opt.\@ prefix}}} & {\textbf{exp.\@ cost in}} & \textbf{{rel.\@ increase}}\cr
         & {\textbf{length}} & {\textbf{USD per kB}} & {\textbf{w.r.t.\@ P2FMS}}\cr
         \midrule
         P2PK  & 47 & 13.9 & 12.8\cr
@@ -984,7 +984,7 @@ For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p
 Section 2 gave an overview of the current method to include off-topic data using fake addresses, exploiting the presence of data fields in the transaction that are essential for payment processing in honest transactions.
 This exploit depends on the difficulty to verify the authenticity of (generalized) destination addresses, i.e.\@ the network cannot distinguish between honest addresses and payload data masquerading as an address.
 
-In consideration of the (community-defined) principles of the Bitcoin network, we generalize a countermeasure proposed by Seeg.
+In consideration with the (community-defined) principles of the Bitcoin network, we generalize a countermeasure proposed by Seeg.
 In principle, this proof-of-ownership considers a transaction clean if and only if the sender of that transaction has control of the private components of the destination addresses.
 That is, if and only if the sender can provide signatures proving his control.
 We argued in section 3 that such countermeasure can be considered maximally strong with respect to the principles of the network, motivating the analysis of the effectiveness of that countermeasure.
@@ -1014,7 +1014,7 @@ Following our assessment that the proposed countermeasure is maximally strong wi
 While replacements in the underlying cryptographic primitives of Bitcoin are expected to be controversial, 
 these could have a significant impact on the circumvention's hardness, and hence can be employed to further improve the effectiveness of the countermeasure.
 
-For example, a sensible strengthening could be achieved by replacing the implementation of Bitcoin's script hash function $H$ to a memory-hard hash function (e.g.\@ \emph{scrypt}).
+For example, a sensible strengthening could be achieved by replacing the implementation of Bitcoin's script hash function $H$ to a memory-hard hash function (e.g.\@ \emph{scrypt} \cite{percival_scrypt}).
 With applicable parameters, this adoption would make the parallelization of the brute-force process (memory-)costly, but without strongly impeding miners computing the hash digests during transaction verification.
 Thus, combined with a ban of P2PK/P2MS transactions (i.e.\@ restricting outputs to $H$-digests), the time required to compute the respective keypairs for a data inclusion could be moved out of reasonable bounds.
 
