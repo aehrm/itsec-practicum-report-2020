@@ -26,7 +26,7 @@ typedef struct tx_chain_el_ {
     tx_chain_el_ *next;
 } tx_chain_el;
 
-unsigned char * get_payload(btc_tx_out *out)
+unsigned char ** get_payloads(btc_tx_out *out, int *payload_num)
 {
     btc_tx_out_type type = btc_script_classify(out->script_pubkey, NULL);
 
@@ -41,13 +41,30 @@ unsigned char * get_payload(btc_tx_out *out)
         case BTC_TX_SCRIPTHASH:
             offset = 2;
             break;
+        case BTC_TX_MULTISIG:
+            break;
         default:
             fprintf(stderr, "warning: recognzied malformed output %s\n", btc_tx_out_type_to_str(type));
             return NULL;
     }
 
-    return (unsigned char*) out->script_pubkey->str + offset;
-    
+    if (type != BTC_TX_MULTISIG) {
+        unsigned char ** ret = (unsigned char**) malloc(sizeof(unsigned char*));
+        ret[0] = (unsigned char*) out->script_pubkey->str + 2; //offset;
+        *payload_num = 1;
+        return ret;
+    } else {
+        vector* ops = vector_new(10, btc_script_op_free_cb);
+        btc_script_get_ops(out->script_pubkey, ops);
+
+        int addr_num = ((btc_script_op*) vector_idx(ops, ops->len - 2))->op - 0x50; // OP_1 == 0x51, OP_2 == 0x52, ...
+        unsigned char ** ret = (unsigned char**) malloc(sizeof(unsigned char*) * addr_num);
+        for (int i = 0; i < addr_num; i++) {
+            ret[i] = ((btc_script_op*) vector_idx(ops, 1+i))->data + 1;
+        }
+        *payload_num = addr_num;
+        return ret;
+    }
 }
 
 int read_tx_list(tx_chain_el **head_out, FILE *infile)
@@ -167,20 +184,23 @@ int tx_chain_write_payload(tx_chain_el *head, tx_chain_metadata *meta, FILE *out
         int outnum = cur->tx->vout->len;
 
         for (int i = 1; i < outnum; i++) { // first output is link
-            unsigned char *payload = get_payload((btc_tx_out*) vector_idx(cur->tx->vout, i));
+            int payload_num;
+            unsigned char ** payloads = get_payloads((btc_tx_out*) vector_idx(cur->tx->vout, i), &payload_num);
+            for (int j = 0; j < payload_num; j++) {
+                for (int byte = 0; byte*8 < meta->prefix_bits; byte++) {
+                    carry &= ~(0xFF >> carry_pos);
+                    carry |= payloads[j][byte] >> carry_pos;
 
-            for (int byte = 0; byte*8 < meta->prefix_bits; byte++) {
-                carry &= ~(0xFF >> carry_pos);
-                carry |= payload[byte] >> carry_pos;
+                    if (carry_pos + meta->prefix_bits - byte*8 >= 8) {
+                        fputc(carry, output);
+                        byte_ctr++;
+                        carry = payloads[j][byte] << (8-carry_pos);
+                    }
 
-                if (carry_pos + meta->prefix_bits - byte*8 >= 8) {
-                    fputc(carry, output);
-                    byte_ctr++;
-                    carry = payload[byte] << (8-carry_pos);
+                    if (byte_ctr >= meta->data_len) goto end;
                 }
-
-                if (byte_ctr >= meta->data_len) goto end;
             }
+            free(payloads);
 
             carry_pos += meta->prefix_bits%8;
             carry_pos %= 8;

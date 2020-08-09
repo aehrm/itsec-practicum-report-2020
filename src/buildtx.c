@@ -24,10 +24,10 @@
 #include "libbtc/include/btc/script.h"
 #include "libbtc/include/btc/random.h"
 #include "libbtc/include/btc/ecc.h"
+#include "libbtc/include/btc/serialize.h"
 
 #include "cjson/cJSON.h"
-
-#define NONDUST 576
+#include "../lib/libbtc/include/btc/tx.h"
 
 typedef struct tx_chain_el_ {
     btc_tx *tx;
@@ -44,6 +44,18 @@ int tx_size(btc_tx *tx)
     cstr_free(s, 1);
 
     return len;
+}
+
+int calc_nondust(btc_tx_out *tx_out)
+{
+    cstring *s = cstr_new_sz(1024);
+    ser_s64(s, tx_out->value);
+    ser_varstr(s, tx_out->script_pubkey);
+
+    int len = s->len;
+    cstr_free(s, 1);
+
+    return (len + 148) * 3; // cf. bitcoin, src/policy/policy.cpp: GetDustThreshold
 }
 
 tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script_num, int prefix_len, int data_len, int fee)
@@ -82,8 +94,8 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
         btc_tx_out *out;
         while (script_idx < script_num && tx_size(cur->tx) < 100000-130) { // keep space for links
             out = btc_tx_out_new();
-            out->value = NONDUST;
             out->script_pubkey = cstr_new_buf((const void*)scripts[script_idx], scripts_len[script_idx]);
+            out->value = calc_nondust(out);
             script_idx++;
 
             vector_add(cur->tx->vout, out);
@@ -122,14 +134,17 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
 
     btc_tx_out *metadata = (btc_tx_out*) vector_idx(head->tx->vout, 0);
     metadata->script_pubkey = cstr_new_sz(64);
-    metadata->value = NONDUST;
     btc_script_append_op(metadata->script_pubkey, OP_RETURN);
     btc_script_append_pushdata(metadata->script_pubkey, data, 15);
+    metadata->value = calc_nondust(metadata);
 
     // specify funds
     int funds = 0;
     for (cur = head; cur->prev != NULL; cur = cur->prev) {
-        funds += cur->tx->vout->len * NONDUST;
+        for (int i = 0; i < cur->tx->vout->len; i++) {
+            btc_tx_out* tx_out = (btc_tx_out*) vector_idx(cur->tx->vout, i);
+            funds += tx_out->value;
+        }
         funds += tx_size(cur->tx) * fee;
 
         btc_tx_out *linktx = (btc_tx_out*) vector_idx(cur->prev->tx->vout, 0);
@@ -272,20 +287,40 @@ void read_input(FILE *infile, result_element **results, int *results_num, char *
     free(in);
 }
 
-void construct_script(char *method_str, unsigned char **script, int *script_len, result_element *result)
+int construct_script(char *method_str, unsigned char **script, int *script_len, result_element *results, int results_num)
 {
+    if (results_num == 0) {
+        return 0;
+    }
+
+    int adv;
     cstring *s = cstr_new_sz(32);
     if (strcmp(method_str, "p2pk") == 0) {
-        btc_script_append_pushdata(s, result->hash, 33);
+        btc_script_append_pushdata(s, results->hash, 33);
         btc_script_append_op(s, OP_CHECKSIG);
+        adv = 1;
     } else if (strcmp(method_str, "p2pkh") == 0) {
-        btc_script_build_p2pkh(s, result->hash);
+        btc_script_build_p2pkh(s, results->hash);
+        adv = 1;
     } else if (strcmp(method_str, "p2sh") == 0) {
-        btc_script_build_p2sh(s, result->hash);
+        btc_script_build_p2sh(s, results->hash);
+        adv = 1;
+    } else if (strcmp(method_str, "p2ms") == 0) {
+        adv = 3;
+        if (results_num < adv) adv = results_num;
+        enum opcodetype opcode;
+        opcode = btc_encode_op_n(1);
+        cstr_append_buf(s, &opcode, 1);
+        for (int i = 0; i < adv; i++) {
+            btc_script_append_pushdata(s, (results+i)->hash, 33);
+        }
+        opcode = btc_encode_op_n(adv);
+        cstr_append_buf(s, &opcode, 1);
+        btc_script_append_op(s, OP_CHECKMULTISIG);
     } else {
         *script = NULL;
         *script_len = 0;
-        return;
+        return 0;
     }
 
     *script_len = s->len;
@@ -293,6 +328,7 @@ void construct_script(char *method_str, unsigned char **script, int *script_len,
     memcpy(*script, s->str, s->len);
 
     cstr_free(s, true);
+    return adv;
 }
 
 void usage(const char *name)
@@ -353,14 +389,18 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    unsigned char *scripts[results_num];
+    int scripts_num = 0;
+    unsigned char *scripts[results_num]; // results_num as upper bound of #scripts
     int scripts_len[results_num];
-    for (int i = 0; i < results_num; i++) {
-        construct_script(method_str, &scripts[i], &scripts_len[i], &(results[i]));
+    while (results_num > 0) {
+        int i = construct_script(method_str, &scripts[scripts_num], &scripts_len[scripts_num], results, results_num);
+        scripts_num++;
+        results_num -= i;
+        results += i;
     }
 
     cstring *s = cstr_new_sz(1024);
-    tx_chain_el* tail = construct_txs(scripts, scripts_len, results_num, bits, data_size, fee);
+    tx_chain_el* tail = construct_txs(scripts, scripts_len, scripts_num, bits, data_size, fee);
     if (sign_tx_chain(tail, fee, rpcurl)) {
         return 1;
     }

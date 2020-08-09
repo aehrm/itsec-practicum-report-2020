@@ -188,6 +188,9 @@ int main(int argc, char *argv[])
     } else if (strcmp(strategy, "p2pk") == 0) {
         method = hash_method_p2pk();
         if (bits == -1) bits = 16;
+    } else if (strcmp(strategy, "p2ms") == 0) {
+        method = hash_method_p2pk();
+        if (bits == -1) bits = 16;
     } else if (strcmp(strategy, "p2pkh") == 0) {
         method = hash_method_p2pkh();
         if (bits == -1) bits = 16;
@@ -224,7 +227,7 @@ int main(int argc, char *argv[])
     }
     
     if (method == NULL) {
-        fprintf(stderr, "Option -s <strategy> must be specified. Available strategies are \"p2pk\", \"p2pkh\", \"p2sh\".\n");
+        fprintf(stderr, "Option -s <strategy> must be specified. Available strategies are \"p2pk\", \"p2ms\", \"p2pkh\", \"p2sh\".\n");
         return 1;
     }
 
