@@ -180,20 +180,9 @@ Seeg also observes that these deliberate inclusions have the possibility to mani
 Several approaches were discussed to prevent this type of off-topic data inclusion.
 These range from monitoring incoming data \cite[Sec.~IV.A]{matzutt_thwarting_2018}, consensus-based deletions of harmful portions of the blockchain \cites{ateniese_redactable_2017}{puddu_chain:_2017}, 
 or maintaining balances instead of transactions \cite{bruce_miniblockchain_2017}.
-%Matzutt et al.\@ first observed that maintaining pseudonymity implies that no countermeasure can comprehensively detect all unintended data.
-
-
-
-% Bitcoin overview: permanent record in the blockchain, local copies
-% Problem description: inclusion of data unrelated to transaction processing is controversial; blockchain bloat, UXTOs, legal risks
-% financial motivations for causing DoS
-
-% As was outlined in the introduction, deliberate inclusion of problematic data into the Blockchain, such as copyright-protected, illegal, or politically sensitive content, could render the possession of the Blockchain illegal in most jurisdictions.
-% Hence, due to persistency of the blockchain, this malicious inclusion harms every participant in Bitcoin's network, and might make participation even legally impossible.
 
 \section{Approach and Contribution}
 
-%In general, we can expect increasingly stronger countermeasures involving increasingly radical methods to be more 
 In general, we can expect that increasingly more effective countermeasures require increasingly radical methods, which in turn, make adoption of that countermeasure increasingly controversial and unlikely.
 Hence from a theoretical perspective, when given a consensus on which methods are considered so controversial that they are rejected, we can determine a maximal effectiveness of any countermeasure that is considered acceptable in the sense of the given consensus.
 
@@ -212,10 +201,6 @@ As first result, a stochastic model of expected inclusion cost, in combination w
 Furthermore, as secondary result, we assess the impact on variations in bitcoin price and available computing efficiency on the countermeasure's effectiveness.
 
 
-%In analyzing and generalizing Seeg's countermeasure, we obtain a theoretical upper bound on the strength of any reasonable countermeasure.
-% Approach: modelling increase in inclusion cost
-% Contribution: provide upper bounds for the effectiveness (w.r.t. to countermeasures adhering the principles)
-
 \section{Outline}
 
 Following this introduction, section 2 gives an overview of the transaction processing in the Bitcoin network, and then demonstrates how the inclusion of off-topic data into the blockchain is currently implemented.
@@ -230,18 +215,6 @@ Finally, section 5 concludes with a summary of the findings, and discusses poten
 
 
 
-%Bitcoin's princliples are presented, which serve as a neccessary list of rules to be adhered by any modification on the network's protocol, in order to be adopted.
-%We make plausible that, in combination with this principles, proof-of-ownership countermeasures, a generalization of Seeg's proposed countermeasure, can be interpreted as maximally strong.
-
-%A brute-force attack on the cryptographic primitives involved in the countermeasure serve as a reasonable upper bound on the computational hardness in circumventing the countermeasure.
-%A practical implementation of such circumvention is outlined.
-%%, which is, assuming that these primitives have in fact their presumed one-way property, optimal in terms of algorithmic complexity.
-
-
-%We conclude with a summary of the findings, and discuss potential improvements in the countermeasure.
-
-
-%We then recapitulate Seeg's proposed countermeasure, and in combination with ..., we make plausible that such countermeasure can be considered maximally strong with respect to sufficiently compatible modifications in the Bitcoin protocol 
 
 \chapter{Data inclusion in the blockchain}
 
@@ -250,9 +223,6 @@ For this, we first outline the transaction processing of the Bitcoin network on 
 
 
 \section{Transaction structure and processing}
-
-%In essence, the Bitcoin network defines its corresponding \textquote{electronic coin as a chain of digital signatures.
-%ach owner transfers the coin to thenext by digitally signing a hash of the previous transaction and the public key of the next owner and adding these to the end of the coin.}
 
 In the Bitcoin network, the transfer of electronic coins is realized using \emph{transactions}.
 From a structural perspective, every transaction specifies a set of \emph{transaction input} and a set of \emph{transaction outputs}, with every input referencing a previous transaction's output.
@@ -267,9 +237,7 @@ Bitcoin implements the authenticity system of these references using a challenge
 
 \begin{itemize}
     \item Every output contains a \emph{locking script}, which can be understood as the cryptographic puzzle or challenge, which was defined when the transaction was constructed.
-        %E.g.\@ a public key of the person owning this transaction.
     \item A reference to an output from an input is authentic if the corresponding \emph{unlocking script} can solve the challenge imposed by the referenced output.
-        %E.g.\@ a signature of the transaction referencing the output, generated by the private key matching the corresponding public key embedded in the input.
 \end{itemize}
 
 Bitcoin provides several methods for implementing locking and unlocking scripts, and as example, the widespread pay-to-public-key script types are presented: In this scenario, a payee Bob expects the payer Alice to publish a valid transaction with his public key embedded in the locking script of an output $x$.
@@ -298,7 +266,6 @@ Hash function $H$ is implemented in Bitcoin as composition of first SHA256, foll
         P2MS & pubkeys $x_1{\cdot} G, x_2{\cdot} G, \dots, x_n{\cdot} G$ & sigs of tx from $x_{i_1}, \dots, x_{i_m}$ \\
         P2SH & hash $H(s)$ of redeem script $s$ & $s$ plus additional data $y$ \\
         Null Data & $\leq \SI{80}{\byte}$ arbitrary data & (unspendable)\\
-        %P2SH* & $x\in [0{:}2^{160}]$ & $H(x)$ \\
         \bottomrule
     \end{tabular}
     \caption[Overview of the discussed standard address types]{Overview of the discussed standard address types: P2PK (pay-to-public-key), P2PKH (pay-to-public-key-hash), P2MS (pay-to-multisig), P2SH (pay-to-script-hash), Null Data. For pay-to-multisig (P2MS), $1\leq m\leq n\leq 3$ is required to be considered standard. See following text for a definition of redeem script.}
@@ -345,17 +312,8 @@ Since most P2SH transaction effectively implements a multisig scheme, a consensu
 
 
 
-% ignore input-script-insertions <-> assume non-standard scripts banned
-% P2SH-method uses non-standard script and is not suited for analysis(?)
-% required unlocking input however provably is a  public key
-
-% P2MS??
-
-
 \chapter{Countermeasure and Circumvention}
 
-%Many extensions are discussed that attempt to mitigate the problem of off-topic data inclusion, which, as was outlined in the introduction, can cause unwanted vulnerabilities to the Bitcoin blockchain.
-%We focus on proof-of-ownership countermeasures, since that method appears to be the strongest while respecting the principles of the Bitcoin network (permissionless, irreversible, etc.) 
 The following section first gives a detailed definition of the proof-of-ownership countermeasure. After specifying the functionality and demonstrating its intended effect, we develop an efficient brute-force method to circumvent this countermeasure. The last part of the section gives details on how to implement such circumvention in practice.
 
 A straightforward idea for preventing data inclusion would make the network \textquote*{forget} stored information after processing, or allow the network to remove undesirable data, or recognize bad transactions using a heuristic, before they are distributed and stored.
@@ -401,8 +359,6 @@ Following section introduces a Proof-of-ownership countermeasure that appears to
 \section{Proof-of-ownership countermeasure}
 
 In his Master's thesis \emph{Hardening Bitcoin against off-topic data inclusion}, Seeg proposes a countermeasure to this problem using a proof-of-ownership mechanism, which he calls \textquote{preimage solution} \cite{seeg_hardening_2018}.
-%He observes that \textquote{variants that store data in standard transactions output can be mitigated by requiring proof that the variable parts}, that is, public keys (P2PK), public key hashes (P2PKH), script hashes (P2SH), \textquote{of the standard transactions are clean.}
-%
 He considers an address as clean (i.e.\@ without arbitrary data) if and only if the owner of that address can prove control, that is, ownership of the address.
 Such proof of ownership is derived from the \textquote*{private} preimage part of the address, similar to a classic challenge–response authentication.
 The wanted effect follows from the assumption that given \textquote*{public} part of a non-clean address, one cannot efficiently derive \textquote*{private} preimage required for the proof of ownership.
@@ -429,22 +385,15 @@ We already observed that existence of a private key needs to be taken as suffici
 and this countermeasure appropriately takes respective signatures $\sigma$ as such proof of existence.
 Addresses that withstand the proposed test hence are precisely the addresses that are derived from private keys.
 
-%This further motivates an evaluation of the proposed countermeasure.
 Additionally, other countermeasures that respect these mentioned principles build on top of the one-way property of the same cryptographic functions in a similar matter, e.g.\@ \textquote{self-verifying account identifiers} proposed by Matzutt et al.\@ \cite[Sec.~IV.D]{matzutt_thwarting_2018}.
 Therefore, this countermeasure and the respective circumvention act as representative for all one-way-based approaches.
 
 \section{Circumvention using partial preimages}
 
-% Refer to similarities between Seegs proofs and Matzutts ICs
-
-In essence, the proposed countermeasure builds upon preimage resistance of the cryptographic functions translating a private key into a public address. %specific cryptographic one-way functions.
-%In order to verify identifiers in transactions to be clean, existence of the preimage is to be proven.
+In essence, the proposed countermeasure builds upon preimage resistance of the cryptographic functions translating a private key into a public address.
 That is, for given address derivation function $f$, required preimage $x$ for the proof-of-ownership cannot be efficiently derived from image $f(x)$, whereas only $f(x)$ is stored in the blockchain.
 Attempts to embed $y=f(x)$ hence become computationally hard.
 For given address type, the address derivation function $f$ is precisely the procedure translating a private key into the locking script, as outlined in table \ref{table:script-types}.
-%For example in the case of P2PKH addresses, $f(x)$ is defined as $H(x\cdot G)$.
-%Table \ref{table:script-types} summarizes how the address generation functions $f$ are implemented for each of the respective address types.
-%
 From the implementation follows, that the countermeasures builds upon the (presumed) one-way property of hash function $H$ (in the case of P2SH addresses) and elliptic curve multiplication (in the case of P2PK, P2PKH, P2MS addresses).
 
 No matter the chosen function $f$, the trivial approach to find a preimage to value $y=f(x)$ is via \emph{brute force}: we test pairwise different preimage candidates $x_1, x_2, \dots$ until we find $x_i$ such that $f(x_i)=y$.
@@ -557,9 +506,7 @@ From this, total cost $C$ of an inclusion can be given with
 To precisely determine random variable $X$, we remind ourselves of the general iterative procedure of the brute-force algorithm:
 In each iteration, the algorithm determines a keypair such that its prefix matches one of the payload fragments not yet assigned a keypair, and then assigns that fragment the keypair.
 That is, in iteration $i$, the algorithm chooses private keys randomly, until generated public key partially collides with one of the $m-i$ remaining unassigned payload fragments.
-In the worst case, all fragments are pairwise different%
-%\footnote{This is to be expected for sufficiently large prefix length $n$:}%
-, hence one iteration can be viewed as repeated independent Bernoulli trials until success (i.e.\@ partial collision found), with success probability $(m-i)/2^n$.  
+In the worst case, all fragments are pairwise different, hence one iteration can be viewed as repeated independent Bernoulli trials until success (i.e.\@ partial collision found), with success probability $(m-i)/2^n$.  
 Referring to required hashes in iteration $i$ with $X_i$, we thus observe that the random variable $X_i$ follows a geometric distribution with parameter $(m-i)/2^n$.
 For the total number of required hash operations $X$, we reach (with $H_p$ the $m$-th harmonic number)
 \[ X = \sum_{i=1}^{m} X_i, \quad E[X] = \sum_{i=1}^{m} E[X_i] = \sum_{i=1}^{m}\frac{2^n}{i} = 2^n\, H_m, \]
@@ -568,20 +515,11 @@ and conclude for the expected total cost $C$
     E[C] = 2^n\, H_m\,c + fm.\label{eq:totalcost}
 \end{equation}
 
-%Figure \ref{fig:xxx} plots the expected total cost with respect to chosen prefix length, using $N=\SI{1000}{\byte}$, and sensible values for $f$, $c$, assuming the {P2PK} method (cf. next section).
-%We can clearly observe a minimum value, the inverse proportionality in bit ranges left of highlighted minimum value, and the exponential growth right of the minimum value.
-
 \section{Estimation of parameters}\label{sec:parameters}
-
-% TODO Hardware? personal measures?
-
-%The software introduced in previous section was used to measure values for $c$, separately for each inclusion method ({P2PK, P2PKH, P2SH}).
-%Additionally, we can give further estimates for cost $c$ indirectly for the inclusion method {P2PKH} and {P2SH}.
 
 Before we can determine the cost increase caused by the proposed countermeasure, we need to give sensible estimations for the cost parameters $c$ and $f$ involved in the previously stated cost model (\ref{eq:totalcost}).
 While fees $f$ for publishing an address are directly determined by the miners' transaction fee rate, hashing cost depends on the efficiency of the hardware used for the brute-force process.
 For this, we estimate the parameter indirectly using hashrates reported by users of the tools \emph{VanitySearch} by Pons \cite{vanitysearch_2019} and \emph{Hashcat} by Steube et al.\@ \cite{hashcat_2020}.
-%Since the P2PK method turns out to be the least effective, the omit an estimation of $c$ for this method.
 
 \subsubsection*{Transaction fees}
 
@@ -625,7 +563,6 @@ Since the P2PK method performs worst in this regard, we discard this method and 
     \begin{tabular}{lr<{\,\si{\watt}}S[table-format=4.0,table-number-alignment=right]@{\,}rS[table-format=1.2e-2,table-number-alignment=right]l}
         \toprule
         \textbf{Hardware} & \multicolumn{1}{r}{\textbf{wattage}} &\multicolumn{2}{r}{\textbf{est.\@ freq.}} & \multicolumn{1}{r}{\textbf{$c$ in USD}} & \textbf{ref.}\cr
-        %\midrule
         \midrule
         \emph{P2PKH} \cr
               GTX 1660 TI  & 120 & 960 & \si{\mega\hertz} & 4.51e-15 &  \cite[][\#396]{forums_vanitysearch}\cr
@@ -637,7 +574,6 @@ Since the P2PK method performs worst in this regard, we discard this method and 
         \emph{P2SH} \cr
         GTX 1080 TI & 250 & 2400 & \si{\mega\hertz} & 3.76e-15 & \cite{gosney_1080ti} \cr 
         RTX 2080 TI & 300 & 3700 & \si{\mega\hertz} & 2.93e-15 &\cite{celik_2080ti} \cr
-        %& RTX Titan & 300 & 4300 & \si{\mega\hertz} & 2.5e-15 &  \cr
         \bottomrule
     \end{tabular}
     \caption[Selected user's reports of their brute-force frequencies on specific hardware]{Selected user's reports of their brute-force frequencies on specific hardware. For the P2PKH method, frequency was directly taken from reported \emph{VanitySearch} speeds. For the P2SH method, SHA256 hash frequency reported from \emph{Hashcat} was divided by factor 2, as explained in the respective section.
@@ -652,25 +588,18 @@ this public key hash is precisely the one used to create {P2PKH} hashes.
 
 Hence, due to the computational similarity, it seems reasonable to estimate possible computational cost for the {P2PKH} method from reported frequencies of \emph{VanitySearch} on selected hardware.
 We assume that the computational effort of testing if a public key hash partially collides with one of the remaining unassigned payloads is negligible.
-%In fact, the \emph{OpenCL} code used for the (usually faster performing) GPU code direcly builds on top of the one used in \emph{VanitySearch}.
 Table \ref{table:cost} gives estimations for cost $c$ bases on selected user reports form the \emph{Bitcointalk} forums.
 We assume an energy cost of \num{.13} USD per \si{\kilo\watt\hour}. 
-%Findings are limited on reports made in the last 12 months, and with $\geq \SI{1000}{\mega\hertz}$ reported per processing unit.
 
-%\subsubsection*{P2SH hash cost estimation}
 In a similar matter, one can use the performances in computing {SHA256} digests as estimation for the cost of the {P2SH} method.
 As was outlined in previous section, the brute-force procedure for the {P2SH} method constructs from nonce candidate $x$ a 57-byte long redeem script $s(x)$, and computes the {P2SH} address as the hash digest $H(x)$, that is by definition
 \begin{equation}
     x \mapsto \text{{RIPEMD160}}(\text{{SHA256}}(s(x))).\label{eq:p2sh-hash}
 \end{equation}
-% http://bench.cr.yp.to/results-hash.html#amd64-skylake
-% https://en.wikipedia.org/wiki/Comparison_of_cryptographic_hash_functions
-% KL15
 The primitive hash functions {RIPEMD160} and {SHA256} are highly similar in architecture and performance; their respective Merkle–Damgård transforms also operate on the same block size of 512 bits. 
 Cf.\@ for example with the \emph{ECRYPT Benchmarking of Cryptographic Systems} \cite{bernstein_benchmark}.
 Therefore, the effort required in above procedure (\ref{eq:p2sh-hash}) can be considered twice as large as one {SHA256} digest computation (in the sense of input length $\leq\!\SI{512}{\bit}$). 
 
-% hashcat
 Likewise to previous estimation using \emph{VanitySearch}, we can use hash frequencies published by users of the password cracking tool \emph{Hashcat}.
 Dividing the reported SHA256 hash frequency by factor 2 thus yields an approximate frequency accomplishable for the P2SH brute-force procedure.
 (We can assume that the GPU can be programmed to perform RIPEMD160 calculations in similar speed.)
@@ -781,11 +710,6 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
                 height=8cm,
                 width=13cm,
                 grid=both,
-                %xmin=5,
-                %xmax=55,
-                %ymax=100,
-                %log ticks with fixed point,
-                %ymin=1,
                 cycle list name=mylist,
                 legend style={at={(0.99,0.01)},
                 anchor=south east,legend columns=1},
@@ -817,11 +741,6 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
                 height=8cm,
                 width=13cm,
                 grid=both,
-                %xmin=5,
-                %xmax=55,
-                %ymax=100,
-                %y log ticks with fixed point,
-                %ymin=1,
                 ytick={4,5,6,7,8,9,10},
                 yticklabels={4,5,6,7,8,9,10},
                 cycle list name=mylist,
@@ -848,7 +767,7 @@ In fact, real-time inclusion using non-specialized hardware seems out of reach f
 \end{figure}
 
 We established a model estimating cost of inclusion from parameters $N$, $f$ and $c$, corresponding to payload size resp.\@ the economic situation of the Bitcoin network (transaction fees, bitcoin exchange rate) resp.\@ computational cost of the hashing procedure.
-It is therefore logical to investigate the impact on changes on this parameter, especially since a continuation of the exponentially growing trend of computation efficiency is expected. %, and many believing a significant increase in bitcoin's exchange rate.
+It is therefore logical to investigate the impact on changes on this parameter, especially since a continuation of the exponentially growing trend of computation efficiency is expected.
 To keep the analysis reasonable, we restrict the parameter space to $10^{-20} \leq c \leq 10^{-14}$ for computation cost, and for the bitcoin price $p$ to range $10^3\,\text{USD}/\text{BTC} \leq p \leq 10^6\,\text{USD}/\text{BTC}$.
 Due to the transcendental nature of the cost function $\mathrm{E}[C]$ with respect to prefix length $n$, it seems out of reach to formulate a closed-form solution to finding optimal prefix length and respective total cost, given parameters $N$, $f$, $c$.
 Hence, numerical methods are applied to determine minimal cost, given numerical values of the parameters.
@@ -858,13 +777,9 @@ this trend is independent of all other parameters.
 Therefore, we continue our analysis by looking at the cost of an inclusion \emph{relative} to payload size, while additionally fixing $N=\SI{10}{\kilo\byte}$.
 
 In order to derive parameter $f$ from bitcoin exchange rate $p$, we fix the P2MS method and network transaction fees of 10 sat per byte.
-%We observe that cost associated with the fees required to increase with respect to transaction fees required for the inclusion into the blockchain, hence fixing the efficient P2MS method and this relatively low fee seems to imply reasonable lower bounds for the inclusion cost.
-%
-%
 This is motivated by the fact that 10 sat per byte can be considered a lower bound on the network's transaction cost, and assuming this value, P2MS method is the cheapest one.
 Accordingly, the final results of the following calculation can be interpreted as a reasonable lower bound.
 
-%From this, as was already performed in section \ref{sec:parameters}, we define \[f = p \cdot (182\,\text{sat} + \SI{38.09}{\byte}\cdot 10\,\text{sat}\,\si{\per\byte}),\] that is, again, non-dust amount per address plus bytes occupied in the transaction multiplied with network fees.
 As was already performed in section \ref{sec:parameters}, we can define parameter $f$ in units of sat, and multiply with $p$ to obtain parameter $f$ in terms of USD.
 Combining with given parameter $c$, let $C_\text{p2ms}(p,c)$ be the optimal relative inclusion cost in USD per byte, determined by numerically finding optimal prefix length $n$.
 By same methods, we can generalize the inclusion cost using fake keys, as
@@ -893,89 +808,6 @@ Second, computation cost $c$ has – independent of bitcoin price $p$ – only s
 We conclude: even though effectiveness of the proposed countermeasure decreases both with increasing bitcoin price and decreasing computational cost, effectiveness remains stable even for extreme values.
 For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{8.1}$.
 
-%   \chapter{Cost of malicious attack}
-%   
-%   In this section, we address the problem of data inclusion from the perspective of a malicious adversary.
-%   As was outlined in the introduction, deliberate inclusion of problematic data into the Blockchain, such as copyright-protected, illegal, or politically sensitive content, could render the possession of the Blockchain illegal in most jurisdictions.
-%   Hence, due to persistency of the blockchain, this malicious inclusion harms every participant in Bitcoin's network, and might make participation even legally impossible.
-%   
-%   Since Bitcoin's consensus mechanism is the basis for its security, we assume a consensus attack (i.e. \textquote*{51\%-attack} – controlling more than honest miner's hashrate) as an upper bound for a disruptive attack against Bitcoin's network.
-%   Therefore, we evaluate the cost of such an attack including malicious content \emph{in terms of computational power}.
-%   It seems adequate to measure the required computational power \emph{relative to the consensus attack}.
-%   Focusing on computation resources, we ignore any monetary cost associated with publishing transactions to the blockchain, e.g. miners' transaction fees and burnt non-dust outputs.
-%   
-%   % https://www.vice.com/en_us/article/d73b8k/the-mystery-behind-the-biggest-bitcoin-transaction-ever-made
-%   % https://arstechnica.com/tech-policy/2017/12/bitcoin-fees-rising-high/
-%   Nevertheless, we restrict the attack to publishing only one transaction of size \SI{10}{\kilo\byte} per block, occupying \SI{1}{\percent} of the block's capacity.
-%   Allowing the attacker to publish larger transactions might cause significant increases in transaction fees, and secondly, would effectively transform this type of attack into a flood attack, which is not subject of discussion.
-%   Although this could potentially be bypassed by solo-mining blocks with respective payload-carrying transactions, provided sufficient computational power, this would similarly transform this approach to a consensus attack.
-%   
-%   \subsubsection*{Comparing computational effort}
-%   As we have already seen, data inclusion using {P2SH} addresses via brute-forcing many redeem scripts is the computationally least expensive method.
-%   To compare the computational cost to Bitcoin's mining process, we argue that the expense of hashing a single {P2SH} transaction is comparable to hashing a single block header during the Proof-of-Work mining process.
-%   % TODO
-%   %Only as a theoretical consideration, we can build an additional estimation on the basis of Bitcoin mining hardware.
-%   %The emergence of mining hardware developed using application-specific integrated circuits (ASIC) proved that SHA-256 hashes can be computed with an efficiency magnitudes better than traditional GPU-based methods.
-%   %Nevertheless, reliable numbers for the efficiency of such ASIC units seem to only appear in the context of Bitcoin mining, therefore, we focus on such mining hardware.
-%   %It has to be emphasized that the advertized strong computation power of such ASIC units cannot directly be utilized for the task of performing the P2SH computation (\ref{eq:p2sh-hash}), and the determined numbers only serve as an indirect estimation of the theoretical efficiency permitted by application-specific integrated circuits.
-%   %
-%   In comparison to the P2SH hash procedure (\ref{eq:p2sh-hash}), Proof-of-Work mining constructs from nonce candidate $x$ the 80-byte long block header $h(x)$, and performs a double SHA-256 hashing, i.e. 
-%   \begin{equation}
-%       x \mapsto \text{{SHA256}}(\text{{SHA256}}(h(x))),\label{eq:pow-hash}
-%   \end{equation}
-%   to test against network target.
-%   We already argued in section \ref{sec:parameter-estimation} that P2SH hashing (\ref{eq:p2sh-hash}) requires computational work comparable to two SHA256 calculations; from above construction (\ref{eq:pow-hash}) follows the stated claim that computing a P2SH hash is approximately as hard as computing a Proof-of-Work hash.
-%   
-%   This conclusion is not immediate due to following apparent caveat: block headers $h(x)$ are substantially longer than redeem scripts $s(x)$.
-%   As the former input is split into two 512-bit blocks for hashing, computation requires two invocations of the respective {SHA256} compression function in the Merkle–Damgård transform.
-%   However, the first 512 bits of input $h(x)$ remain constant with respect to chosen nonce $x$, and in general, during mining, the \textquote*{mid-state} after applying the first compression is precomputed and stored.
-%   Hence, computations of $\text{{SHA256}}(s(x))$ and $\text{{SHA256}}(h(x))$ both require only a single invocation of the compression function.
-%   % https://link.springer.com/chapter/10.1007/978-3-662-44893-9_12
-%   
-%   \subsubsection*{Payload data rate}
-%   Let us denote $r$ (bit per second) as the targeted rate of payload to be included into the blockchain.
-%   As we have agreed to a transaction's size limit of \SI{10}{\kilo\byte}, at most $p=308$ addresses can be published per block, i.e., for given prefix length $n$, $np$ bit per block, or per 10 minutes. 
-%   
-%   From this, required prefix length $n=\SI{10}{\minute}\cdot r/p$ directly follows when attaining data rate $r$.
-%   This, in turn, requires the brute-force process to produce $p$ suitable addresses in no longer than 10 minutes, in order to submit the corresponding transaction in the following block.
-%   
-%   \begin{table}[]
-%       \centering
-%       \begin{tabular}{rS[table-format=1.2,table-number-alignment=right]rS[table-format=2.1,table-number-alignment=right]r}
-%           \toprule
-%           {\textbf{hash rate}} & \multicolumn{4}{c}{\textbf{payload data rate in \si{\byte\per\second}}} \cr
-%           \midrule
-%                       & \multicolumn{1}{r}{tx \SI{10}{\kilo\byte}} & ($n$) & \multicolumn{1}{r}{tx \SI{100}{\kilo\byte}} & ($n$) \cr
-%                       & {$p=308$} & & {$p=3117$} & \cr
-%           \midrule
-%           \SI{5}{\giga\hertz}& 2.49 & (38.8) & 24.9 & (38.3) \\
-%           \SI{20}{\tera\hertz}& 3.26 & (50.8) & 32.7 & (50.3) \\
-%           \SI{1}{\percent} & 4.25 & (66.2) & 42.7 & (65.8) \\
-%           \SI{10}{\percent} & 4.46 & (69.5) & 44.9 & (69.1) \\
-%           \SI{100}{\percent} & 4.68 & (72.9) & 47.1 & (72.4) \\
-%           \midrule
-%           (unrestr.) & 10.2 & (160) & 104 & (160) \\
-%           \bottomrule
-%       \end{tabular}
-%       \caption[Attainable rate of payload data included into the blockchain with proposed circumvention]{Attainable rate of payload data included into the blockchain while circumventing proof-of-ownership countermeasure using proposed brute-force method on P2SH addresses, constrained by hash rate given in the left column. Percentages in the left column represent fractions of current total miners' hash rate (\protect\SI{90}{\exa\hertz}). Second row shows the assumed maximum allowed transaction size for including addresses, per block.
-%       Last row calculates the payload data rate in absence of any countermeasure, i.e. using all 160 bits of the P2SH address field.}
-%       \label{table:datarates}
-%   \end{table}
-%   
-%   Alluding to expected cost $\mathrm{E}[C]$, we can estimate expected computation time $\mathrm{E}[T]$ given prefix length $n$ and attacker's available hash rate $\nu$ with 
-%   \[ \mathrm{E}[T] = 2^n\, H_p / \nu \leq \SI{10}{\minute}, \]
-%   solving for $\nu$ yields $\nu \geq 2^n\cdot H_p / (\SI{10}{\minute})$.
-%   In fact, this calculation demonstrates that a one-one mapping between hash rate and data rate exists: given $\nu$, we can calculate maximum prefix length $n$ and hence maximum attainable data rate.
-%   Table \ref{table:datarates} gives some numerical values, % additionally computed vor a transactions' size limit of \SI{100}{\kilo\byte} (i.e. the network's transaction size limit, and \SI{10}{\percent} of the block size limit).
-%   Note that fractional prefix lengths $n$ were explicitly permitted, representing the \textquote*{average} prefix length, such that the computation time limit of 10 minutes is completely exploited.
-%   
-%   We collect the following observation:
-%   for brute-force hash rates currently attainable in practice using a GPU ($\nu = \SI{5}{\giga\hertz}$, first row of table \ref{table:datarates}, see also table \ref{table:cost}), potential payload data rate drops to about \SI{24}{\percent}, relative to the data rate reachable by current methods which are not hindered by countermeasures (see last row).
-%   Similarly, hash rate of currently available ASIC mining equipment ($\nu = \SI{20}{\tera\hertz}$, second row) could, only in theory, reach performances of \SI{32}{\percent}.
-%   Do note however that current proof-of-work mining equipment fundamentally builds upon highly specialized integrated circuits – 
-%   their efficiency cannot be used for the proposed brute-force procedure, and only serves as an indirect estimation of the theoretical efficiency permitted by application-specific integrated circuits.
-%   
-%   % We conclude that, while proof-of-ownership countermeasures do cause a drop in attainable rate of (potentially harmful) data embedded into the blockchain, figures remain in a 
 
 \chapter{Conclusion}
 
@@ -1009,8 +841,6 @@ While the additional checks imposed by the countermeasure appear to be in accord
 Furthermore, a parallelization of the brute-force process might make data inclusion a feasible option for some actors.
 
 Following our assessment that the proposed countermeasure is maximally strong with respect to the principles, we observe that the effectiveness of the countermeasure directly depends on the computational hardness of the outline brute-force algorithm.
-%The effectiveness of the countermeasure could additionally be amplified by replacing 
-%
 While replacements in the underlying cryptographic primitives of Bitcoin are expected to be controversial, 
 these could have a significant impact on the circumvention's hardness, and hence can be employed to further improve the effectiveness of the countermeasure.
 
@@ -1018,22 +848,11 @@ For example, a sensible strengthening could be achieved by replacing the impleme
 With applicable parameters, this adoption would make the parallelization of the brute-force process (memory-)costly, but without strongly impeding miners computing the hash digests during transaction verification.
 Thus, combined with a ban of P2PK/P2MS transactions (i.e.\@ restricting outputs to $H$-digests), the time required to compute the respective keypairs for a data inclusion could be moved out of reasonable bounds.
 
-%Nevertheless, it is not unreasonable to expect much more serious issues arising with an aversary deliberatly including problematic data.
-%Even without replaced hash functions, the neccessary computational power is much better used 
-
-%Nevertheless, it is not unreasonable to expact an adversary attempting to deliberatly inserting large problematic data to additionally face other hurdles.
-%%Even without the replacement of the hash function $H$, a large-scale inclusion attack requires significant hashing power, hence it would be preferable to rather invest on gaining a relevant portion of the 
-%Even without the replacement of the hash function $H$, a timely large-scale inclusion attack would occupy large portions of the blocks' size limits, significantly increasing transaction fee.
-
 
 Nevertheless, with the presence of the discussed countermeasure, it is unreasonable to expect an adversary attempting to deliberately insert large problematic data.
 For one, even without the discussed replacement of the hash function $H$, such large-scale inclusion attack would require significant hashing power, which would be rather invested in gaining a relevant portion of the network's hashrate.
 For another, the inclusion of large data would significantly increase transaction fees, effectively translating this attack into a denial-of-service attack, whereas the latter can be performed by easier means.
 
-
-
-
-% https://link.springer.com/article/10.1007/s11227-018-2317-6
 
 \backmatter
 
@@ -1049,13 +868,5 @@ For another, the inclusion of large data would significantly increase transactio
 \phantomsection \label{biblio}
 \addcontentsline{toc}{chapter}{References}
 \printbibliography[title=References]
-%\phantomsection
-%\addcontentsline{toc}{chapter}{\bibname}
-
-												  
-% Use IEEEtran for numeric references
-%\bibliographystyle{IEEEtranSA})
-
-%\bibliography{thesis}
 
 \end{document}
