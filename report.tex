@@ -19,7 +19,7 @@
 \hypersetup{pdfencoding=auto}
 \usepackage[backend=biber,style=ieee,urldate=comp]{biblatex}
 \DefineBibliographyStrings{english}{
-    urlseen={accessed}
+    urlseen={accessed},
 }
 
 \DeclareFieldFormat[online]{url}{\url{#1}}
@@ -157,7 +157,7 @@ Hence, using publicly available benchmark figures, we estimate the cost of the c
 
 Bitcoin, the decentralized, distributed, pseudonymous P2P electronic cash system introduced in 2009, makes use of blockchains, distributed data structures, as permanent tamper-proof and append-only log of transactions, enforcing irreversibility of these transactions.
 By design, the blockchain is distributed inside the P2P network to all (full) nodes of the Bitcoin, and specifically every network node maintains a local copy of the entire blockchain.
-While many Bitcoin users can rely on \enquote{simplified payment verification} and/or blockchain indexing servers to avoid downloading a full copy of the blockchain, full nodes – maintaining a complete up-to-date copy of the blockchain – are required in the network to to independently verify the transaction ledger \cite{nakamoto_bitcoin_2008}.
+While many Bitcoin users can rely on \enquote{simplified payment verification} and/or blockchain indexing servers to avoid downloading a full copy of the blockchain, full nodes – maintaining a complete up-to-date copy of the blockchain – are required in the network to independently verify the transaction ledger \cite{nakamoto_bitcoin_2008}, cf.~\cite[Chap.~8–9]{antonopoulos_mastering_2017}.
 
 The beneficial properties of the blockchain storage – distributed, tamper-proof, timestamped, among others – have incentivized actors to use Bitcoin's blockchain as permanent storage of data unrelated to Bitcoin's payment processing.
 Antonopoulos for example observes that transactions record a digital fingerprint to establish a proof-of-existence for specific files on a specific date.
@@ -179,13 +179,13 @@ or maintaining balances instead of transactions \cite{bruce_miniblockchain_2017}
 \subsubsection*{Approach and Contribution}
 
 In general, we can expect that increasingly more effective countermeasures require increasingly radical methods, which in turn, make adoption of that countermeasure increasingly controversial and unlikely.
-Hence from a theoretical perspective, when given a consensus on which methods are considered so controversial that they are rejected, we can determine a maximal effectiveness of any countermeasure that is considered acceptable in the sense of the given consensus.
+Hence, from a theoretical perspective, when given a consensus on which methods are considered so controversial that they are rejected, we can determine a maximal effectiveness of any countermeasure that is considered acceptable in the sense of the given consensus.
 
 Due to the multitude of different interest groups and actors that constitute Bitcoin's community, a precise consensus of the approved methods available when designing an effective countermeasure seems unlikely.
 Nevertheless, we can identify a minimal set of general principles that can be considered defining for Bitcoin,
 that is \textcquote{bitcoinwiki_prohibited_2016}{even if all Bitcoin users decide to adopt any of these changes, the resulting cryptocurrency can no longer be considered \enquote*{Bitcoin} because it has diverged too much from the original design}.
 
-In light of these principles, we make plausible that a proof-of-ownership countermeasure, a generalization of proposed countermeasures by Seeg \cite{seeg_hardening_2018} and Matzutt et al.~\cite{matzutt_thwarting_2018}, resp., are maximally strong. 
+In light of these principles, we make plausible that a proof-of-ownership countermeasure, a generalization of proposed countermeasures by Seeg \cite{seeg_hardening_2018} and Matzutt et al.~\cite{matzutt_thwarting_2018}, resp., is maximally strong. 
 These build upon the cryptographic security of Bitcoin's key generation scheme, and requires actors to prove that they hold the private key of their respective addresses.
 A brute-force exponential-time inversion on the involved cryptographic primitives leads to a trivial circumvention of that proof-of-ownership countermeasure.
 Under reasonable assumptions on the one-way property of these primitives,
@@ -206,7 +206,7 @@ A slight generalization of his proposed countermeasure is presented, followed by
 On the basis of this implementation, Section \ref{chap:evaluation} establishes a stochastic model estimating the expected cost involved in executing a circumventing and inserting arbitrary data into the blockchain.
 From this, the above mentioned main results are calculated.
 
-Finally, Section \ref{chap:summary} concludes with a summary of the findings, and discusses potential improvements in the countermeasure.
+Finally, Section \ref{chap:conclusion} concludes with a summary of the findings, and discusses potential improvements in the countermeasure.
 
 
 
@@ -246,7 +246,7 @@ Then Bob can add the output with the locking script expected by Charlie, and sub
 The network verifies this reference by checking the signature of the unlocking script against the public key embedded in the locking script.
 
 
-Bitcoin employs a \emph{Elliptic Curve Digital Signature Algorithm} (using parameters from SEC2-secpk256k1) as implementation of a public-key system.
+Bitcoin employs an \emph{Elliptic Curve Digital Signature Algorithm} (using parameters from SEC2-secpk256k1) as implementation of a public-key system.
 Henceforth, we refer to $G\in \mathbb{F}_p^2$ as the base point of the elliptic curve group (over the finite field of prime order $p$). For $x\in \mathbb{N}$, let $x\cdot G$ denote the elliptic curve point multiplication by a scalar.
 
 Following Table \ref{table:script-types} summarizes the five standard locking script types (i.e.\@ address types) with their corresponding unlocking script. Any other forms of locking scripts are currently being rejected by network participants.
@@ -271,7 +271,7 @@ Hash function $H$ is implemented in Bitcoin as composition of first SHA256, foll
 \end{table}
 
 The P2SH (pay-to-script-hash) type requires further explanation: this address type is a generalization of the challenge–response authentication employed by the network, and allow users to create their own challenges and responses using a limited scripting language.
-A locking script consists of the hash of the challenge script $s$ (called \emph{redeem script}), while the unlocking script must contain the corresponding redeem script (transferred off-band to the payee), and additional parameters $y$ that the author of the redeem script $s$ requires as input to $s$ to be processed, checking authenticity of the payee, i.e.\@ $s$ accepts on input $y$.
+A locking script consists of the hash of the challenge script $s$ (called \emph{redeem script}), while the unlocking script must contain the corresponding redeem script (transferred out-of-band to the payee), and additional parameters $y$ that the author of the redeem script $s$ requires as input to $s$ to be processed, checking authenticity of the payee, i.e.\@ $s$ accepts on input $y$.
 
 
 
@@ -283,7 +283,7 @@ The blockchain acts as timestamping mechanism, by providing \textcquote[307]{nak
 
 This data structure disallows any modification on the agreed set of transactions \emph{by design}, 
 to maintain the chain of ownership induced by the transactions.
-Hence the locking and unlocking scripts of every transaction are stored in the blockchain, essentially indefinitely, and distributed to each participant to verify the chain of ownership.
+Hence, the locking and unlocking scripts of every transaction are stored in the blockchain, essentially indefinitely, and distributed to each participant to verify the chain of ownership.
 
 \subsubsection*{Inclusion on Outputs\,/\,Locking Scripts}
 
@@ -291,7 +291,7 @@ Null Data transactions already give actors the possibility to create (unspendabl
 
 Therefore, more sophisticated techniques for data inclusion build upon the fact, that the network does not, and cannot test if the variable parts of the locking scripts, e.g.\@ pubkey(s) $x\cdot G$ in P2PK (P2MS) transactions, hashes $H(x\cdot G)$, $H(s)$ in P2PKH, P2SH transactions, are in fact, generated using the usual intended way.
 For example, consider payload $y$ of \SI{65}{\byte}.
-The network accepts and stores a P2PK transaction with $y$ as \textquote*{fake} public key in its locking script, even though $y\neq x\cdot G$ for all $x$ (in fact, even if $y$ does not conform to the syntax of a EC point).
+The network accepts and stores a P2PK transaction with $y$ as \textquote*{fake} public key in its locking script, even though $y\neq x\cdot G$ for all $x$ (in fact, even if $y$ does not conform to the syntax of an EC point).
 Again, this means that the coins \textquote*{sent} to the fake address $y$ cannot be spent, i.e.\@ \emph{burnt} coins, just as it is the case of Null Data transactions.
 Unlike Null Data outputs, a multitude of P2PK outputs can be present in a transaction, making the technique using P2PK outputs more cost-efficient.
 Refer to the paper of Sward et al.\@ \cite{sward_data_2018} for an in-depth discussion of efficiencies using this technique.
@@ -335,12 +335,12 @@ While there is no central authority stating these properties, the corresponding 
 \end{quote}
 The mentioned countermeasures above would contradict principles 4, 7, at least.
 
-Hence we continue our analysis only on countermeasures that are compatible with these properties,
+Hence, we continue our analysis only on countermeasures that are compatible with these properties,
 since all nonconforming countermeasures might face serious opposition to adoption from the community.
 From these principles appear to follow, that these countermeasures must respect following propositions, when determining if a submitted transaction contains no bad data:
 \begin{enumerate}
     \item Every honest user can convince the system implementing the countermeasure in question that its submitted transaction is not bad, without relying on third parties, i.e.\@ using only the private key (by principle 2, 5, 6).
-    \item Further assessment needs to be made in a transparent way, especially without an authoritative figure (by principle 4),
+    \item Further assessment needs to be made transparently, especially without an authoritative figure (by principle 4),
     \item it needs to be made \emph{before} publication of the transaction (by principle 7).
 \end{enumerate}
 As a consequence of (a), honest addresses are those derived from a private key, as otherwise, proof asserting honesty requires a third party.
@@ -349,7 +349,7 @@ While (b) and (c) could allow for further consensus-approved content filters dec
 
 Hence, without loss of generality, we need to assume a submitted destination address as clean if the owner of that address can prove the existence of the corresponding private key, that is, ownership of the address.
 
-Matzutt et al.\@ already pointed out that, under this setup, pseudonymous identifiers (cf.\@ principle 5) always open the possibility to insert data by encoding them into these identifies: no matter how \textquote*{existence of the private key} is implemented, users willing to insert content into the blockchain always have the possibility to generate arbitrarily many addresses until suitable ones encoding the content are found \cite[Sec.~III.C]{matzutt_thwarting_2018}.
+Matzutt et al.\@ already pointed out that, under this setup, pseudonymous identifiers (cf.\@ principle 5) always open the possibility to insert data by encoding them into these identifiers: no matter how \textquote*{existence of the private key} is implemented, users willing to insert content into the blockchain always have the possibility to generate arbitrarily many addresses until suitable ones encoding the content are found \cite[Sec.~III.C]{matzutt_thwarting_2018}.
 
 Following section introduces a Proof-of-ownership countermeasure that appears to be the strongest one respecting these propositions, motivating the evaluation of this countermeasure and its circumvention, which directly incorporates the approach outlined by Matzutt et al.
 
@@ -371,7 +371,7 @@ Miners can verify $\sigma$ using the public key $x\cdot G$ embedded in the trans
 This countermeasure protects against data inclusion: if an adversary wishes to embed message into public key $y$, he cannot efficiently derive $x$ such that $x\cdot G = y$, required in order to sign the proof $\sigma$.
 Thus, given valid $\sigma$, the transaction in question can be safely included into the blockchain.
 
-In the case of P2PKH and P2SH addresses, proofs are constructed in a similar manner.
+In the case of P2PKH and P2SH addresses, proofs are constructed similarly.
 For P2PKH addresses $H(x\cdot G)$, signed message $m$ remains identical.
 Only the public key $x\cdot G$ is additionally transferred such that $\sigma$ can be verified by the network.
 For P2SH addresses $H(s)$, the redeem script $s$ serves as preimage/proof $\sigma$.
@@ -429,7 +429,7 @@ Having provided a framework showing the theoretical possibility to circumvent su
 That is, including payload data into the blockchain, where the data is embedded into ordered output addresses of transactions.
 Additionally, following procedure generates private keys to each of the used output addresses, such that proofs of ownership can be deduced as required in the countermeasure, and hence the generated transactions are approved.
 It is to be noted, that, in the context of Seeg's proposal, investing in a rainbow table could significantly increase performance in comparison to a full brute force approach.
-Nevertheless we omit rainbow tables, since this issue could easily be solved when refining the countermeasure, e.g.\@ including transaction hash in the proof message $m$ to be signed.
+Nevertheless, we omit rainbow tables, since this issue could easily be solved when refining the countermeasure, e.g.\@ including transaction hash in the proof message $m$ to be signed.
 Cf.\@ the \textquote{freshness property} in the approach proposed by Matzutt et al.\@ \cite[368--369]{matzutt_thwarting_2018}.
 
 The procedure is given with a chosen prefix length $n$. Performance and cost directly depend on this parameter, and a fit choice for $n$ is discussed in the next section.
@@ -624,7 +624,7 @@ Again, refer to Table \ref{table:cost} for estimations on cost $c$ bases on sele
 These numbers should explicitly not be understood to represent the current state of hardware efficiency, but rather as figures attainable with available off-the-shelf hardware.
 While non-GPU hardware has the potential to be more energy-efficient, either the hardware cannot be easily adapted (e.g.\@ in the case of ASIC hardware), or the frequencies are too low to perform the brute-force algorithm in sensible time.
 
-Both the P2PKH and the P2SH method perform the same hash operations, only the former has to additionally perform a elliptic-curve addition.
+Both the P2PKH and the P2SH method perform the same hash operations, only the former has to additionally perform an elliptic-curve addition.
 Comparing the two methods, we can already observe that the digest calculation in the P2PKH method significantly contributes to total computation time, next to the elliptic-curve arithmetic.
 
 Specialized software for cracking ECDSA keypairs does not appear to exist, hence we cannot estimate parameter $c$ in the same manner.
@@ -671,7 +671,7 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and use the
 \end{figure}
 
 This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
-To begin with, we choose following rough but sensible estimates for computation cost parameter $c$ for methods P2MS, P2PKH, P2SH, based on our observations from previous section.
+To begin with, we choose the following rough but sensible estimates for computation cost parameter $c$ for methods P2MS, P2PKH, P2SH, based on our observations from previous section.
 We estimate $c_\text{ms}=c_\text{pkh}=c_\text{p2pkh}=\num{4.50e-13}$ USD, $c_\text{sh} = \num{3.00e-15}$ USD.
 Also stated in previous section, fee parameter $f$ directly follows from Bitcoin exchange rate and mining fees, and is displayed in Table \ref{table:txtypes-parameters}.
 
@@ -820,15 +820,15 @@ First, as we expected, relative inclusion cost $C_\mathrm{p2ms}(p,c)$ is almost 
 Since sub-linear, we expect that $C_\mathrm{p2ms}(p,c)$ continues to converge towards $C_\mathrm{fake}(p)$, which grows linear with respect to $p$.
 Nevertheless, this trend appears to be minor; a 100-fold bitcoin price increase lowers relative inclusion cost by no more than \SI{11}{\percent}.
 
-Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10$, for example, would reduce relative inclusion cost by \SI{5.66}{\percent}. (Moore's law would estimate such cost decrease of factor $10$ in a time span of 7 years.)
+Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10$, for example, would reduce relative inclusion cost by \SI{5.59}{\percent}. (Moore's law would estimate such cost decrease of factor $10$ in a time span of 7 years.)
 
 We conclude: even though effectiveness of the proposed countermeasure decreases both with increasing bitcoin price and decreasing computational cost, effectiveness remains stable even for extreme values.
-For our established bounds of parameters, this means $\num{4.7} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{8.1}$.
+For our established bounds of parameters, this means $\num{4.3} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{7.3}$.
 
 
 \chapter{Conclusion}\label{chap:conclusion}
 
-\section{Summary}
+\subsubsection*{Summary}
 
 Section \ref{chap:problem} gave an overview of the current method to include off-topic data using fake addresses, exploiting the presence of data fields in the transaction that are essential for payment processing in honest transactions.
 This exploit depends on the difficulty to verify the authenticity of (generalized) destination addresses, i.e.\@ the network cannot distinguish between honest addresses and payload data masquerading as an address.
@@ -851,7 +851,7 @@ Impact on computing cost $c$ however is heavily sublinear, with a growth behavio
 Besides the increase in inclusion cost, the required computation time (even if cheap, relatively speaking) might already discourage actors wishing to include arbitrary data into the blockchain.
 In other words, the countermeasure ensures that a large data inclusion within a reasonable time is only possible if a lot of parallel computing power is available.
 
-\section{Outlook}
+\subsubsection*{Outlook}
 
 If inclusion of data into the blockchain were to become a major and existing problem, adoption of Seeg's countermeasure could contribute to protecting against this attack.
 While the additional checks imposed by the countermeasure appear to be in accordance with the general principles of the network, it comes with drawbacks concerning general usability and increased verification work for miners.
