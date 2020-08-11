@@ -173,8 +173,8 @@ Hence, the insertion of objectionable content has the potential to jeopardize Bi
 Seeg \cite[1--2]{seeg_hardening_2018} also observes that these deliberate inclusions have the possibility to manipulate the bitcoin price, i.e.\@ expecting falling prices caused by endangered legality, and hence give an attacker serious financial incentive for executing such an attack, inserting malicious data, and profiting off, e.g.,\@ futures contracts.
 
 Several approaches were discussed to prevent this type of off-topic data inclusion.
-These range from monitoring incoming data \cite[Sec.~IV.A]{matzutt_thwarting_2018}, consensus-based deletions of harmful portions of the blockchain \cites{ateniese_redactable_2017}{puddu_chain:_2017}, 
-or maintaining balances instead of transactions \cite{bruce_miniblockchain_2017}.
+%These range from monitoring incoming data \cite[Sec.~IV.B]{matzutt_thwarting_2018}, consensus-based deletions of harmful portions of the blockchain \cites{ateniese_redactable_2017}{puddu_chain:_2017}, or maintaining balances instead of transactions \cite{bruce_miniblockchain_2017}.
+These range from monitoring incoming data, consensus-based deletions of harmful portions of the blockchain, or maintaining balances instead of transactions, and are outlined in next section. 
 
 \subsubsection*{Approach and Contribution}
 
@@ -198,7 +198,8 @@ Furthermore, as secondary result, we assess the impact on variations in bitcoin 
 
 \subsubsection*{Outline}
 
-Following this introduction, Section \ref{chap:problem} gives an overview of the transaction processing in the Bitcoin network, and then demonstrates how the inclusion of off-topic data into the blockchain is currently implemented.
+Following this introduction, first Section \ref{chap:relatedwork} summarizes work related to this report's subject.
+Then, Section \ref{chap:problem} gives an overview of the transaction processing in the Bitcoin network, and then demonstrates how the inclusion of off-topic data into the blockchain is currently implemented.
 
 Section \ref{chap:countermeasure} clarifies the above-mentioned principles, which makes it immediately clear that the countermeasure proposed by Seeg cannot be further strengthened without violating the principles.
 A slight generalization of his proposed countermeasure is presented, followed by an implementation of a brute-force circumvention.
@@ -212,7 +213,41 @@ Finally, Section \ref{chap:conclusion} concludes with a summary of the findings,
 
 \chapter{Related Work}\label{chap:relatedwork}
 
-% TODO
+\subsubsection*{Analysis of off-topic data}
+
+As was already outlined in the introduction, the technical problems and legal risks involved with the possibility of storing arbitrary data were recognized early on.
+Hence, research focuses on one part on a analysis of currently included off-topic data in Bitcoin's blockchain; Matzutt et al.\@ \cite{matzutt_poster:_2016} quantified the found data, and in further studies \cite{matzutt_quantitative_2018} subsequently analyzed the content qualitatively on their potential legal risk, and the potential insert techniques.
+
+These techniques were further surveyed and compared by Sward et al.\@ \cite{sward_data_2018}.
+Following these results, Bartoletti et al.\@ \cite{bartoletti_journey_2019} performed an analysis on the different protocols for including data, which type of payload they include, and which techniques the respective protocols employ.
+
+This analysis is not limited to Bitcoin's blockchain:\@ 
+Sato et al.\@ \cite{sato_threat_2020} have begun the systematic examination of malicious files in Ethereum's blockchain.
+
+
+\subsubsection*{Research into countermeasures}
+
+In 2013, the Bitcoin development community briefly discussed some approaches to prevent the unhindered inclusion of off-topic data \cite{maxwell_prevent_2013} using the one-way property of hash functions, yet it appears that further developments were not further pursued.
+These ideas were then expaneded by Seeg \cite{seeg_hardening_2018} into a full countermeasure, with a patch for the Bitcoin source code as implementation.
+This countermeasure is further presented and discussed in the following sections.
+
+Independently, Matzutt et al.\@ \cite{matzutt_thwarting_2018} discussed three approaches as countermeasure:\@ (a) heuristic content detectors filtering out problematic data, (b) increasing mandatory transaction fee penaltizing large transactions, and (c) \enquote{self-verifying account identifiers}, similarly exploiting the one-way property of hash functions.
+
+Unlike the previously cited results from Seeg and Matzutt et al., this report gives a \emph{quantitative} evaluation on the effect of these proposed countermeasures.
+
+On the other part, much research is conducted on the topic on making the blockchain mutable, to reactively remove problematic data.
+Atenise et al.\@ \cite{ateniese_redactable_2017} propsed the use of intended collisions of chameleon hashes in order to implement rewritings of the blockchain.
+This was further improved onto the transaction-level by Derler et al.\@ \cite{derler_fine-grained_2019}.
+
+Puddu et al.\@ \cite{puddu_chain:_2017} presented a different approach to rewriting the blockchain, allowing the consensus-driven maintenance of alternate versions of data records, that makes any mutation controllable and verifiably by the network.
+
+Lee et al.\@ \cite{lee_modifiable_2019} introduced an implementation of a permissionless, but modifiable blockchain using truncated hash values. 
+
+Marsalek and Zefferer \cite{marsalek_correctable_2019} improved these developments, and applied correction chains to implement a correctable blockchain architecture, which unlike the other solutions, has the capability to reduce the blockchain's set of unspent transactions.
+
+
+Others approach the problem by proactively letting the network only maintain monetary information instead of a full blockchain \cite{chepurnoy_rollerchain_2016}, \cite{bruce_miniblockchain_2017}.
+
 
 \chapter{Data Inclusion in the Blockchain}\label{chap:problem}
 
@@ -314,7 +349,7 @@ Since most P2SH transaction effectively implement a multisig scheme, a consensus
 
 The following section first gives a detailed definition of the proof-of-ownership countermeasure. After specifying the functionality and demonstrating its intended effect, we develop an efficient brute-force method to circumvent this countermeasure. The last part of the section gives details on how to implement such circumvention in practice.
 
-A straightforward idea for preventing data inclusion would make the network \textquote*{forget} stored information after processing, or allow the network to remove undesirable data, or recognize bad transactions using a heuristic, before they are distributed and stored.
+A straightforward idea for preventing data inclusion would make the network \textquote*{forget} stored information after processing, or allow the network to remove undesirable data, or recognize bad transactions using a heuristic, before they are distributed and stored; cf. the approaches from Section~\ref{chap:relatedwork}.
 However, all these preventions conflict with certain properties of the network, that are universally considered characterizing for the Bitcoin system.
 Hence, the adoption of such countermeasure would transform the Bitcoin system to such an extent, that the resulting electronic cash system would in general not be considered \textquote*{Bitcoin}.
 
@@ -484,7 +519,22 @@ We further observe that the preimage loop can easily be parallelized on multiple
 
 \subsubsection*{Overview of the Implementation}
 
-% TODO
+The accompanied C code implements the above mentioned procedure, split into two separate components: \emph{hidedata} performs the preparation and the partial preimage loop and outputs suitable keypairs; \emph{buildtx} then constructs the transactions from these keypairs, with assistance from the RPC interface of the Bitcoin daemon.
+Furthermore, a program \emph{parsedata} allows for the reconstruction of the included data by giving as input the hash of the transaction containing the metadata (e.g.\@ the rightmost transaction in Figure \ref{fig:tx-construction})
+
+As a proof of concept, \emph{hidedata} implements the brute-force loop without major optimizations: for both the elliptic-curve arithmetic and the hash operations the OpenSSL libraries are invoked, with a parallelization onto all CPU cores via OpenMP. Cf.\@ \texttt{src/hash\_method\allowbreak\_p2pk.c}, \dots\texttt{\_p2sh.c}, \dots\texttt{\_p2pkh.c}.
+Further improvements in efficiency are considered out of scope for this implementation, since they are extremely specific to hardware and elliptic-curve theory.
+Section \ref{sec:parameters} will introduce software that is optimized for these types of brute-force tasks, which compute significantly faster, parallelizing onto the GPU, and specifically in the case of elliptic-curve arithmetic, exploits the symmetry and two endomorphisms of the elliptic-curve group \cite{vanitysearch_2019}, 
+\cite{hashcat_2020}.
+Nevertheless, these software programs cannot be immediately applied to the stated problem of data inclusion.
+
+The program \emph{buildtx} recieves a list of keypairs and the constructs the suitable transactions as was outlined previously.
+Due to the linkage between the desired transactions, the hash of the first transaction (chronologically speaking, e.g.\@ tx \#1 from Figure \ref{fig:tx-construction}) needs to be determined.
+This requires the transaction to be final, hence the program communicates with the Bitcoin client via the RPC interface to let the client fund and sign the first transaction.
+
+After submission into the blockchain (e.g.\@ via the Bitcoin RPC client), the included data can be reconstructed using the program \emph{parsedata}.
+Taking as input the hash of the metadata-holding transaction, the program fetches all relevant transactions via the RPC interface, by following the funding references along the logical direction.
+Then, using the metadata, the payload can be trivially reconstructed from the outputs of the respective transactions.
 
 
 \chapter{Increased Cost of Data Inclusion}\label{chap:evaluation}
