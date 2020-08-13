@@ -1,6 +1,6 @@
 # Hiding off-topic data in legit Bitcoin transactions: Source Code
 
-Implementation as described in: A. Ehrmanntraut, “Evaluating the effect on countermeasures preventing the inclusion of off-topic data into Bitcoin's blockchain”, Report, 2020.
+Implementation as described in: A. Ehrmanntraut, “Evaluating the effect on countermeasures preventing the inclusion of off-topic data into Bitcoin's blockchain”, Report, 2020. [[PDF](../report.pdf)]
 
 This set of programs generates “legit” transaction containing arbitrary off-topic data as payload.
 Similar to vanity address generation, by a brute-force procedure, the payload is encoded in the first most significant bits of public addresses (partial preimages), which are embedded in the transactions.
