@@ -231,12 +231,13 @@ Sato et al.\@ \cite{sato_threat_2020} have begun the systematic examination of m
 \subsubsection*{Research into countermeasures}
 
 In 2013, the Bitcoin development community briefly discussed some approaches to prevent the unhindered inclusion of off-topic data \cite{maxwell_prevent_2013} using the one-way property of hash functions, yet it appears that further developments were not further pursued.
-These ideas were then expanded by Seeg \cite{seeg_hardening_2018} into a full countermeasure, with a patch for the Bitcoin source code as implementation.
+These ideas were then expanded by Seeg \cite{seeg_hardening_2018} into a full countermeasure, with a patch for the Bitcoin source code as proof of concept.
 This countermeasure is further presented and discussed in the following sections.
 
-Independently, Matzutt et al.\@ \cite{matzutt_thwarting_2018} discussed three approaches as countermeasure:\@ (a) heuristic content detectors filtering out problematic data, (b) increasing mandatory transaction fee penalizing large transactions, and (c) \enquote{self-verifying account identifiers}, similarly exploiting the one-way property of hash functions.
+Independently, Matzutt et al.\@ \cite{matzutt_thwarting_2018} discussed three approaches as countermeasure:\@ (a) heuristic content detectors filtering out problematic data, (b) increasing mandatory transaction fee penalizing large transactions, and (c) \textquote{self-verifying account identifiers}, similarly exploiting the one-way property of hash functions.
+Concerning content filters, they already note poor efficiency and depolyability, as the filters need to be frequently adjusted, globally distributed, and as heuristic, is never completely circumvention-proof.
 
-Unlike the previously cited results from Seeg and Matzutt et al., this report gives a \emph{quantitative} evaluation on the effect of these proposed countermeasures.
+Unlike the previously cited results from Seeg and Matzutt et al., this report gives a \emph{quantitative} evaluation on the effect of the proposed countermeasures relying on the one-way property.
 
 On the other part, much research is conducted on the topic on making the blockchain mutable, to reactively remove problematic data.
 Atenise et al.\@ \cite{ateniese_redactable_2017} proposed the use of intended collisions of chameleon hashes in order to implement rewriting of the blockchain.
@@ -244,9 +245,13 @@ This was further improved onto the transaction-level by Derler et al.\@ \cite{de
 
 Puddu et al.\@ \cite{puddu_chain:_2017} presented a different approach to rewriting the blockchain, allowing the consensus-driven maintenance of alternate versions of data records, that makes any mutation controllable and verifiably by the network.
 Lee et al.\@ \cite{lee_modifiable_2019} introduced an implementation of a permissionless, but modifiable blockchain using truncated hash values.
-
 Marsalek and Zefferer \cite{marsalek_correctable_2019} improved these developments, and applied correction chains to implement a correctable blockchain architecture, which unlike the other solutions, has the capability to reduce the blockchain's set of unspent transactions.
+Nonetheless, the cited approaches to implement mutability require major protocol changes, besides the fact that these extensions strongly conflict with principles of Bitcoin, discussed in Section~\ref{chap:countermeasure}.
 
+Promising results were obtained by Florian et al.\@ \cite{florian_erasing_2019}, proposing a lightweight approach using \textquote{functionality-preserving local erasure}.
+This gives node operators the ability to locally erase problematic transactions, and falling back on simplified payment verification to implicitly validate transactions directly dependent on erased transactions.
+Most importantly, the proposal requires no protocol changes or forks, not even a consensus on the network participants, while only minimally decreasing the security guarantees of the network.
+While this approach arguably has the best chances at adoption if data inclusion were to become a serious problem, some actors still might see the widespread adoption of this countermeasure as an attack on the design philosophy of Bitcoin, specifying the strict irreversibility of transactions.
 
 Others approach the problem by proactively letting the network only maintain monetary information instead of a full blockchain \cite{chepurnoy_rollerchain_2016}, \cite{bruce_miniblockchain_2017}.
 
