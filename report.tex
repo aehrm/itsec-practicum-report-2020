@@ -13,7 +13,7 @@
 \usepackage{booktabs,makecell}
 \usepackage[binary-units=true]{siunitx}
 \usepackage[autopunct=true]{csquotes}
-\renewcommand{\mktextquote}[6]{#1#2#4#3#6#5}
+\renewcommand{\mktextquote}[6]{#1#2#4#5#3#6}
 \usepackage[labelfont=bf,format=plain]{caption}
 \usepackage{enumitem}
 \setlist{itemsep=0.3ex}
@@ -162,7 +162,7 @@ Hence, using publicly available benchmark figures, we estimate the cost of the c
 
 Bitcoin, the decentralized, distributed, pseudonymous P2P electronic cash system introduced in 2009, makes use of blockchains, distributed data structures, as permanent tamper-proof and append-only log of transactions, enforcing irreversibility of these transactions.
 By design, the blockchain is distributed inside the P2P network to all (full) nodes of the Bitcoin, and specifically every network node maintains a local copy of the entire blockchain.
-While many Bitcoin users can rely on \enquote{simplified payment verification} and/or blockchain indexing servers to avoid downloading a full copy of the blockchain, full nodes – maintaining a complete up-to-date copy of the blockchain – are required in the network to independently verify the transaction ledger \cite{nakamoto_bitcoin_2008}, cf.~\cite[Chap.~8–9]{antonopoulos_mastering_2017}.
+While many Bitcoin users can rely on \textquote{simplified payment verification} and/or blockchain indexing servers to avoid downloading a full copy of the blockchain, full nodes – maintaining a complete up-to-date copy of the blockchain – are required in the network to independently verify the transaction ledger \cite{nakamoto_bitcoin_2008}, cf.~\cite[Chap.~8–9]{antonopoulos_mastering_2017}.
 
 The beneficial properties of the blockchain storage – distributed, tamper-proof, timestamped, among others – have incentivized actors to use Bitcoin's blockchain as permanent storage of data unrelated to Bitcoin's payment processing.
 Antonopoulos for example observes that transactions record a digital fingerprint to establish a proof-of-existence for specific files on a specific date.
@@ -187,7 +187,7 @@ In general, we can expect that increasingly more effective countermeasures requi
 Hence, from a theoretical perspective, when given a consensus on which methods are considered so controversial that they are rejected, we can determine a maximal effectiveness of any countermeasure that is considered acceptable in the sense of the given consensus.
 
 Due to the multitude of different interest groups and actors that constitute Bitcoin's community, a precise consensus of the approved methods available when designing an effective countermeasure seems unlikely.
-Nevertheless, we can identify a minimal set of general principles that can be considered defining for Bitcoin, that is \textcquote{bitcoinwiki_prohibited_2016}{even if all Bitcoin users decide to adopt any of these changes, the resulting cryptocurrency can no longer be considered \enquote*{Bitcoin} because it has diverged too much from the original design}.
+Nevertheless, we can identify a minimal set of general principles that can be considered defining for Bitcoin, that is \textquote{even if all Bitcoin users decide to adopt any of these changes, the resulting cryptocurrency can no longer be considered \textquote*{Bitcoin} because it has diverged too much from the original design} \cite{bitcoinwiki_prohibited_2016}.
 
 In light of these principles, we make plausible that a proof-of-ownership countermeasure, a generalization of proposed countermeasures by Seeg \cite{seeg_hardening_2018} and Matzutt et al.~\cite{matzutt_thwarting_2018}, resp., is maximally strong.
 These build upon the cryptographic security of Bitcoin's key generation scheme, and requires actors to prove that they hold the private key of their respective addresses.
@@ -321,7 +321,7 @@ A locking script consists of the hash of the challenge script $s$ (called \emph{
 \section{Script-Based Data Inclusion}\label{sec:fakekeys}
 
 As was introduced above, the Bitcoin network employs a blockchain as a distributed data structure to prevent double-spending of transaction outputs, i.e.\@ multiple references to the same output.
-The blockchain acts as timestamping mechanism, by providing \textcquote[307]{nakamoto_bitcoin_2008}{a system for participants to agree on a single history on the order \textins{of transactions} in which they were received}, hence storing every transaction with its relevant information in that data structure on time of submission.
+The blockchain acts as timestamping mechanism, by providing \textquote{a system for participants to agree on a single history on the order \textins{of transactions} in which they were received} \cite[307]{nakamoto_bitcoin_2008}, hence storing every transaction with its relevant information in that data structure on time of submission.
 
 This data structure disallows any modification on the agreed set of transactions \emph{by design}, to maintain the chain of ownership induced by the transactions.
 Hence, the locking and unlocking scripts of every transaction are stored in the blockchain, essentially indefinitely, and distributed to each participant to verify the chain of ownership.
@@ -417,7 +417,7 @@ For P2SH addresses $H(s)$, the redeem script $s$ serves as preimage/proof $\sigm
 Again, this prevents data inclusion due to the one-way property of hash function $H$.
 
 Note that in the case of P2PKH and P2SH transactions, Seeg proposes to exploit the definition of $H=\mathrm{SHA256}\circ\mathrm{RIPEMD160}$: the image $\sigma = \mathrm{SHA256}(s)$ serves as proof of ownership for $H(s)=\mathrm{RIPEMD160}(\sigma)$.
-Nevertheless, without loss of generality we can abstract away from that specific implementation and focus on \enquote*{full} preimages as defined in previous paragraph, since Seeg's approach identically relies on the one-way property.
+Nevertheless, without loss of generality we can abstract away from that specific implementation and focus on \textquote*{full} preimages as defined in previous paragraph, since Seeg's approach identically relies on the one-way property.
 
 In fact, the proposed countermeasure appears to be one of the strongest compatible with the Principles of Bitcoin.
 We already observed that existence of a private key needs to be taken as sufficient proof that the public address is clean, and this countermeasure appropriately takes respective signatures $\sigma$ as such proof of existence.
