@@ -86,6 +86,10 @@ void print_statusline(hash_engine *engine, unsigned long progress, double hashra
         remtarget = "90\% percentile";
         median = median / (-log(2)) * (log(0.1));
     }
+    if (progress > median) {
+        remtarget = "95\% percentile";
+        median = median / (log(0.1)) * (log(0.05));
+    }
 
     double rate;
     double remtime;

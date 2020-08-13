@@ -96,7 +96,7 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
         // add data scripts
         int sigops = 0;
         btc_tx_out *out;
-        while (script_idx < script_num && tx_size(cur->tx) < MAX_TX_SIZE-130 && sigops < MAX_SIGOP_COUNT-1) { // keep space for links
+        while (script_idx < script_num && tx_size(cur->tx) <= MAX_TX_SIZE-135 && sigops <= MAX_SIGOP_COUNT-1) { // keep space for links
             out = btc_tx_out_new();
             out->script_pubkey = cstr_new_buf((const void*)scripts[script_idx], scripts_len[script_idx]);
             out->value = calc_nondust(out);
@@ -106,7 +106,7 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
             vector_add(cur->tx->vout, out);
         }
 
-        if (tx_size(cur->tx) > MAX_TX_SIZE-130 || sigops > MAX_SIGOP_COUNT-1) {
+        if (tx_size(cur->tx) > MAX_TX_SIZE-135 || sigops > MAX_SIGOP_COUNT-1) {
             // roll back
             vector_remove_idx(cur->tx->vout, cur->tx->vout->len-1);
             script_idx--;

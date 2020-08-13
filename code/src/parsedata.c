@@ -50,7 +50,7 @@ unsigned char ** get_payloads(btc_tx_out *out, int *payload_num)
 
     if (type != BTC_TX_MULTISIG) {
         unsigned char ** ret = (unsigned char**) malloc(sizeof(unsigned char*));
-        ret[0] = (unsigned char*) out->script_pubkey->str + 2; //offset;
+        ret[0] = (unsigned char*) out->script_pubkey->str + offset;
         *payload_num = 1;
         return ret;
     } else {
