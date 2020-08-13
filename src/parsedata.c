@@ -199,11 +199,12 @@ int tx_chain_write_payload(tx_chain_el *head, tx_chain_metadata *meta, FILE *out
 
                     if (byte_ctr >= meta->data_len) goto end;
                 }
+
+                carry_pos += meta->prefix_bits%8;
+                carry_pos %= 8;
             }
             free(payloads);
 
-            carry_pos += meta->prefix_bits%8;
-            carry_pos %= 8;
         }
     }
 
@@ -308,14 +309,15 @@ void usage(const char *name)
     fprintf(stderr,
 "Usage: %s [-f <file>|-] [-r <txhash>] [-R <rpcurl>]\n"
 "\n"
-"Parameter:\n"
+"Parameters:\n"
 "-f <file>|-            Offline mode. Read transactions from file, line by line.\n"
 "                       If \"-\" was specified, data is read from standard input.\n"
 "-r <txhash>            Online mode. Communicates with the bitcoind RPC daemon.\n"
 "                       Extracts data starting with specified head tx, successively\n"
 "                       fetching relevant tx's from the deamon.\n"
 "-R <rpcurl>            Use specified bitcoind deamon endpoint, in the form\n"
-"                       http://user:password@ipaddr:port/\n", name);
+"                       http://user:password@ipaddr:port/\n"
+"-h                     Prints this help text.\n", name);
 }
 
 int main(int argc, char *argv[])

@@ -41,7 +41,7 @@ struct p2sh_params {
 struct p2sh_hash_ctx {
     BIGNUM *nonce;
     int script_size;
-    unsigned char script[57];
+    unsigned char script[89];
     unsigned char ripemdhash[20];
 };
 
@@ -67,9 +67,9 @@ hash_context* p2sh_ctx_alloc(void *params)
     ((p2sh_hash_ctx*) ctx)->script_size = pubkey_len + 24;
 
     if (pubkey_len == 33) {
-        memcpy(script, SCRIPT_TEMPLATE_33, 57);
+        memcpy(script, &SCRIPT_TEMPLATE_33, 57);
     } else {
-        memcpy(script, SCRIPT_TEMPLATE_65, 89);
+        memcpy(script, &SCRIPT_TEMPLATE_65, 89);
     }
     memcpy(script+23, pubkey, pubkey_len);
 

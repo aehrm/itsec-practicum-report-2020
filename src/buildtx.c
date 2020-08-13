@@ -144,13 +144,14 @@ tx_chain_el* construct_txs(unsigned char **scripts, int *scripts_len, int script
     metadata->value = calc_nondust(metadata);
 
     // specify funds
-    int funds = 0;
     for (cur = head; cur->prev != NULL; cur = cur->prev) {
+        int64_t funds = 0;
         for (int i = 0; i < cur->tx->vout->len; i++) {
             btc_tx_out* tx_out = (btc_tx_out*) vector_idx(cur->tx->vout, i);
             funds += tx_out->value;
         }
-        funds += tx_size(cur->tx) * fee;
+        funds += (int64_t) tx_size(cur->tx) * fee;
+        fprintf(stderr, "funds %zu, tsize %d, outs %d\n", funds, tx_size(cur->tx), cur->tx->vout->len); fflush(stderr);
 
         btc_tx_out *linktx = (btc_tx_out*) vector_idx(cur->prev->tx->vout, 0);
         linktx->value = funds;
@@ -341,12 +342,14 @@ void usage(const char *name)
     fprintf(stderr,
 "Usage: %s [-f <file>|-] [-F <fee>] [-R <rpcurl>]\n"
 "\n"
-"Parameter:\n"
+"Parameters:\n"
 "-f <file>|-            Read keypairs from specified JSON file. If \"-\" was specified,\n"
 "                       data is read from standard input.\n"
-"-F <fee>               Construct transaction with specified fee in sat/byte.\n"
+"-F <fee>               Construct transaction with specified fee in sat/byte. Default\n"
+"                       is 20 sat/byte\n"
 "-R <rpcurl>            Use specified bitcoind deamon endpoint, in the form\n"
-"                       http://user:password@ipaddr:port/\n", name);
+"                       http://user:password@ipaddr:port/\n"
+"-h                     Prints this help text.\n", name);
 }
 
 int main(int argc, char *argv[])

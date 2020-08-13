@@ -102,16 +102,17 @@ void usage(const char *name)
     fprintf(stderr,
 "Usage: %s -s <strategy> [-X <strategy-option>] [-n <prefix-length>] [-f <file>|-] [-i <data>]\n"
 "\n"
-"Parameter:\n"
-"-s <strategy>          Use specified Strategy to hide supplied data. One of \"p2pk\", \"p2pkh\",\n"
-"                       \"p2sh\".\n"
+"Parameters:\n"
+"-s <strategy>          Use specified strategy to hide supplied data. One of \"p2pk\", \"p2ms\",\n"
+"                       \"p2pkh\", \"p2sh\".\n"
 "-X <strategy-option>   Supply additional options to specified strategy. Option string is in the\n"
 "                       form <key>=<value>. Strategy \"p2sh\" is the only one accepting options,\n"
 "                       and requires a 33-byte or 65-byte long public key via -Xpubkey=<hexstr>.\n"
 "-n <prefix-length>     Use prefixes of specified bitlength.\n"
 "-i <data>              Hide following data, interpreted literal.\n"
 "-f <file>|-            Read data to hide from file. If \"-\" was specified, data is read from\n"
-"                       standard input.\n", name);
+"                       standard input.\n"
+"-h                     Prints this help text.\n", name);
 }
 
 int main(int argc, char *argv[])
