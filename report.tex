@@ -143,7 +143,7 @@ In fact, arguably objectionable content is already stored on Bitcoin's blockchai
 this potentially illegal content has the possibility to put participants of the network at legal risk, imposing a threat to the entire network.
 
 To overcome this risk, possible countermeasures were discussed. This paper analyzes a countermeasure by Seeg, which exploits the one-way property of the address generation.
-This paper analyzes this approach and identifies this type of countermeasure as maximally strong with respect to principles that can be considered compatible with the philosophy of Bitcoin, motivating an evaluation of the strength of this countermeasure.
+This type of countermeasure can be identified as maximally strong with respect to principles that can be considered compatible with the philosophy of Bitcoin, motivating an evaluation of the strength of this countermeasure.
 By performing a brute-force exponential-time inversion on the address generation, an implementation of a circumvention is obtained.
 
 The economic cost for executing this brute-force circumvention can be considered as a reasonable upper bound on the effectiveness of the countermeasure.
@@ -171,7 +171,7 @@ The use of Bitcoin's blockchain as storage for data unrelated to payment process
 While some see this use as abusive and worry about bloat of blockchain and payment processing, others see such (unintended) use of Bitcoin's technology as legitimate and valuable \cite[155]{antonopoulos_mastering_2017}.
 Most such inclusions of off-topic data observed in practice are negligible in size and content, but nevertheless more sophisticated methods have allowed actors to include entire files such as images, or PDF files \cite{matzutt_quantitative_2018}.
 
-Besides the issues already mentioned by Antonopoulos, the Bitcoin community observed potential legal issues in connection with this data inclusions \cite{bitcoinwiki_weaknesses_2011}.
+Besides the issues already mentioned by Antonopoulos, the Bitcoin community observed potential legal issues in connection with this data inclusions \cite{bitcoinwiki_weaknesses_2011}, as well as the scientific community \cite{mcreynolds_cryptographic_2015}.
 Illegal content in the blockchain makes participants of the network legally liable, who need to maintain a copy of the blockchain for operation.
 
 Hence, the insertion of objectionable content has the potential to jeopardize Bitcoin (and generalizing, all blockchain-based cryptocurrencies), rendering participation illegal in certain jurisdictions.
@@ -260,7 +260,7 @@ For this, we first outline the transaction processing of the Bitcoin network on 
 \section{Transaction Structure and Processing}
 
 In the Bitcoin network, the transfer of electronic coins is realized using \emph{transactions}.
-From a structural perspective, every transaction specifies a set of \emph{transaction input} and a set of \emph{transaction outputs}, with every input referencing a previous transaction's output.
+From a structural perspective, every transaction specifies a set of \emph{transaction inputs} and a set of \emph{transaction outputs}, with every input referencing a previous transaction's output.
 Following these references, each transaction can be considered as a vertex of a directed acyclic graph, where  its references the directed edges. Sinks of that graph correspond to (mined) coinbase transactions.
 
 To give this transaction authenticity, an eligible user attaches to each reference some form of digital signature.
@@ -280,13 +280,13 @@ Then, to transfer these coins to Charlie, Bob constructs a transaction $t$ with 
 Then Bob can add the output with the locking script expected by Charlie, and submit the transaction; cf.\@ \cite[Chap.~6--7]{antonopoulos_mastering_2017}.
 
 
-The network verifies this reference by checking the signature of the unlocking script against the public key embedded in the locking script.
+The network verifies this reference by checking the signature of the unlocking script against the public key embedded in the locking script $x$.
 
 
 Bitcoin employs an \emph{Elliptic Curve Digital Signature Algorithm} (using parameters from SEC2-secpk256k1) as implementation of a public-key system.
 Henceforth, we refer to $G\in \mathbb{F}_p^2$ as the base point of the elliptic curve group (over the finite field of prime order $p$). For $x\in \mathbb{N}$, let $x\cdot G$ denote the elliptic curve point multiplication by a scalar.
 
-Following Table \ref{table:script-types} summarizes the five standard locking script types (i.e.\@ address types) with their corresponding unlocking script. Any other forms of locking scripts are currently being rejected by network participants.
+Table \ref{table:script-types} summarizes the five standard locking script types (i.e.\@ address types) with their corresponding unlocking script. Any other forms of locking scripts are currently rejected by network participants.
 Hash function $H$ is implemented in Bitcoin as composition of first SHA256, followed by RIPEMD160.
 
 \begin{table}
@@ -327,10 +327,10 @@ Null Data transactions already give actors the possibility to create (unspendabl
 
 Therefore, more sophisticated techniques for data inclusion build upon the fact, that the network does not, and cannot test if the variable parts of the locking scripts, e.g.\@ pubkey(s) $x\cdot G$ in P2PK (P2MS) transactions, hashes $H(x\cdot G)$, $H(s)$ in P2PKH, P2SH transactions, are in fact, generated using the usual intended way.
 For example, consider payload $y$ of \SI{65}{\byte}.
-The network accepts and stores a P2PK transaction with $y$ as \textquote*{fake} public key in its locking script, even though $y\neq x\cdot G$ for all $x$ (in fact, even if $y$ does not conform to the syntax of an EC point).
-Again, this means that the coins \textquote*{sent} to the fake address $y$ cannot be spent, i.e.\@ \emph{burnt} coins, just as it is the case of Null Data transactions.
+The network accepts and stores a P2PK transaction with $y$ as \textquote*{fake} public key masquerading as such in its locking script, even though $y\neq x\cdot G$ for all $x$ (in fact, even if $y$ does not conform to the syntax of an EC point).
+Again, this means that the coins \textquote*{sent} to the fake address $y$ cannot be spent, i.e.\@ coins \emph{burnt}, just as it is the case of Null Data transactions.
 Unlike Null Data outputs, a multitude of P2PK outputs can be present in a transaction, making the technique using P2PK outputs more cost-efficient.
-Refer to the paper of Sward et al.\@ \cite{sward_data_2018} for an in-depth discussion of efficiencies using this technique.
+Refer to the paper of Sward et al.\@ \cite{sward_data_2018} for an in-depth discussion of efficiencies using these techniques.
 
 \subsubsection*{Inclusion on Inputs\,/\,Unlocking Scripts}
 While the previously presented inclusion techniques insert their payload in the locking scripts, Sward et al.~\cite{sward_data_2018} analyzed inclusion approaches using P2SH unlocking scripts.
@@ -340,7 +340,7 @@ This results in two valid transactions, and even require no burnt coins.
 In fact, Sward et al.\@ showed that this technique outperforms every known inclusion technique using locking scripts, given the fact that unlocking scripts have a much higher size limitation in comparison to locking scripts, which have a fixed format.
 
 Nevertheless, we will exclude an analysis of this inclusion technique in this report.
-These complex transaction types might be the easiest to ban or limit, if data inclusion using P2SH were to become a problem.
+These complex transaction types might be the easiest to ban or limit, if data inclusion using P2SH inputs were to become a problem.
 Since most P2SH transaction effectively implement a multisig scheme, a consensus for imposing a fixed structure for redeem scripts might be established, especially if data inclusion using unlocking scripts causes major threats.
 
 
@@ -427,7 +427,7 @@ In essence, the proposed countermeasure builds upon preimage resistance of the c
 That is, for given address derivation function $f$, required preimage $x$ for the proof-of-ownership cannot be efficiently derived from image $f(x)$, whereas only $f(x)$ is stored in the blockchain.
 Attempts to embed chosen $y$ as address into the blockchain hence become computationally hard, since finding $x$ such that $f(x)=y$ is required.
 For given address type, the address derivation function $f$ is precisely the procedure translating a private key into the locking script, as outlined in Table \ref{table:script-types}.
-From the implementation follows, that the countermeasures builds upon the (presumed) one-way property of hash function $H$ (in the case of P2SH addresses) and elliptic curve multiplication (in the case of P2PK, P2PKH, P2MS addresses).
+From the implementation follows, that the countermeasures builds upon the (presumed) one-way property of hash function $H$ (in the case of P2SH, P2PKH addresses) and elliptic curve multiplication (in the case of P2PK, P2MS addresses).
 
 No matter the chosen function $f$, the trivial approach to find a preimage to value $y=f(x)$ is via \emph{brute force}: we test pairwise different preimage candidates $x_1, x_2, \dots$ until we find $x_i$ such that $f(x_i)=y$.
 The preimage $x_i$ can then be used to generate suitable proofs for the image (e.g.\@ signatures $\sigma$).
@@ -435,7 +435,7 @@ Nevertheless, successfully executing such a preimage attack is highly unlikely d
 In fact, if that attack were possible, an adversary could gain control of the funds assigned to any public key (by inverting the public-key function $f$).
 
 While a full preimage attack is out of reach, \emph{partial} preimage attacks are achievable nonetheless:
-Given a prefix bit-length $n$, we define $x$ as \emph{partial preimage} of $y$ when $f(x)$ equals $y$ \emph{in the first $n$ leftmost (most significant) bits}, i.e.\@ $f(x)=y\|z$ where $z$ is an arbitrary suffix.
+Given a prefix bit-length $n$, we define $x$ as \emph{partial preimage} of $y$ when $f(x)$ equals $y$ \emph{in the first $n$ leftmost (i.e.\@ most significant) bits}, i.e.\@ $f(x)=y\|z$ where $z$ is an arbitrary suffix.
 
 For uniformly chosen private key candidate $x_i$, we can assume that the respective $n$-bit prefix of the public key $f(x_i)$ is again uniformly distributed in the range $[0{:}2^n]$.
 By this, the probability of $x_i$ being a partial preimage of $y$ increases to $1/2^n$, which, after sufficiently many repetitions and sufficiently small $n$, leads to suitable partial preimage $x$; the corresponding public key $f(x)$ then contains the wanted payload $y$ as prefix.
@@ -460,9 +460,9 @@ While harder $f$ make computation of partial preimages increasingly\nopagebreak{
 
 Having provided a framework showing the theoretical possibility to circumvent such countermeasure, following section describes the necessary steps to perform such inclusion in practice.
 That is, including payload data into the blockchain, where the data is embedded into ordered output addresses of transactions.
-Additionally, following procedure generates private keys to each of the used output addresses, such that proofs of ownership can be deduced as required in the countermeasure, and hence the generated transactions are approved.
+Additionally, following procedure generates private keys to each of the used output addresses, such that proofs of ownership can be deduced as required by the countermeasure, and hence the generated transactions are approved.
 It is to be noted, that, in the context of Seeg's proposal, investing in a rainbow table could significantly increase performance in comparison to a full brute force approach.
-Nevertheless, we omit rainbow tables, since this issue could easily be solved when refining the countermeasure, e.g.\@ including transaction hash in the proof message $m$ to be signed.
+Nevertheless, we omit rainbow tables, since this issue could easily be solved by refining the countermeasure, e.g.\@ including transaction hash in the proof message $m$ to be signed.
 Cf.\@ the \textquote{freshness property} in the approach proposed by Matzutt et al.\@ \cite[368--369]{matzutt_thwarting_2018}.
 
 The procedure is given with a chosen prefix length $n$. Performance and cost directly depend on this parameter, and a fit choice for $n$ is discussed in the next section.
@@ -480,14 +480,14 @@ This leads to a mapping $y_i \mapsto x_i$ for all $1\leq i\leq p$.
 
 The implementation is trivial for the P2SH method: let $s$ be an injective function transferring a nonce $m\in\mathbb{N}$ into a valid redeem script.
 We start off with a random nonce $m$, and test $H(s(m))$, increment $m$, test again, and so forth.
-Having found $m$ with prefix of $H(s(m))$ matching one fragment in the tree, we can assign that fragment the private key $s(m)\eqqcolon x_i$.
+Having found $m$ with prefix of $H(s(m))$ matching one fragment $x_i$ in the tree, we can assign that fragment the private key $s(m)\eqqcolon x_i$.
 Observe that, in order to circumvent this specific countermeasure, $s(\cdot)$ must not necessarily map to a syntactically \emph{valid} redeem script, but % TODO
 %Nevertheless, it is beneficial to let $s(\cdot)$ implement a redeem script testing authenticity (e.g.\@ check against a public key) to prevent the payload-holding outputs to be spent.
 
 In the case of the P2PK/P2MS method, this translates to testing products $m\cdot G$, $(m{+}1)\cdot G$, $(m{+}2)\cdot G,\dots$ from random starting nonce $m$.
 Using the axioms of the group formed by the elliptic curve, we can avoid costly elliptic curve multiplications: starting with random nonce $m$, we cache public key $P\coloneqq m\cdot G$.
 When incrementing $m$, we add generator point to $P$, that is $P\coloneqq P+G$, and ensure invariant $P= m\cdot G$.
-Again, having found $m$ with prefix of $P$ matching one fragment in the tree, we assign that fragment private key $m\eqqcolon x_i$.
+Again, having found $m$ with prefix of $P$ matching one fragment $x_i$ in the tree, we assign that fragment private key $m\eqqcolon x_i$.
 The P2PKH method can be implemented similarly, by testing hashes $H(P)$.
 
 \emph{Transaction construction.}
@@ -547,7 +547,7 @@ We will see that the user's chosen prefix length for the partial collisions dire
 \section{Modeling Inclusion Cost}
 
 Essentially, the choice of a suitable prefix length is a trade-off:
-On the one hand, the number of required keypairs, and hence needed transaction cost, are inversely proportional to the chosen prefix length;
+On the one hand, the number of required keypairs, and hence needed publication cost, are inversely proportional to the chosen prefix length;
 on the other hand, the probability for a partial collision decreases exponentially with respect to the prefix length, and in turn, computation cost increases exponentially.
 
 To precisely model the cost of an inclusion of an arbitrary payload into the blockchain, restricted with the proposed countermeasure, let us denote
@@ -555,7 +555,7 @@ To precisely model the cost of an inclusion of an arbitrary payload into the blo
     \item prefix length with $n$,
     \item payload length with $N$,
     \item cost of a single hash operation with $c$,
-    \item transaction cost for a single address with $f$.
+    \item publication cost for a single address with $f$.
 \end{itemize}
 Moreover, we denote $m=N/n$ as the number of required addresses, (or equivalently, the number of payload fragments) and $X$ as the random variable of required hash operations.
 From this, total cost $C$ of an inclusion can be given with
@@ -566,7 +566,7 @@ In each iteration, the algorithm determines a keypair such that its prefix match
 That is, in iteration $i$, the algorithm chooses private keys randomly, until generated public key partially collides with one of the $m-i$ remaining unassigned payload fragments.
 In the worst case, all fragments are pairwise different, hence one iteration can be viewed as repeated independent Bernoulli trials until success (i.e.\@ partial collision found), with success probability $(m-i)/2^n$.
 Referring to required hashes in iteration $i$ with $X_i$, we thus observe that the random variable $X_i$ follows a geometric distribution with parameter $(m-i)/2^n$.
-For the total number of required hash operations $X$, we reach (with $H_p$ the $m$-th harmonic number)
+For the total number of required hash operations $X$, we reach (with $H_m$ the $m$-th harmonic number)
 \[ X = \sum_{i=1}^{m} X_i, \quad E[X] = \sum_{i=1}^{m} E[X_i] = \sum_{i=1}^{m}\frac{2^n}{i} = 2^n\, H_m, \]
 and conclude for the expected total cost $C$
 \begin{equation}
@@ -576,7 +576,7 @@ and conclude for the expected total cost $C$
 \section{Estimation of Parameters}\label{sec:parameters}
 
 Before we can determine the cost increase caused by the proposed countermeasure, we need to give sensible estimations for the cost parameters $c$ and $f$ involved in the previously stated cost model (Eq.~\ref{eq:totalcost}).
-While transaction cost $f$ for publishing an address are directly determined by the miners' transaction fee rate and bitcoin price, hashing cost depends on the efficiency of the hardware used for the brute-force process.
+While publication cost $f$ of an address are directly determined by the miners' transaction fee rate and bitcoin price, hashing cost depends on the efficiency of the hardware used for the brute-force process.
 For this, we estimate the parameter indirectly using hashrates reported by users of the tools \emph{VanitySearch} by Pons \cite{vanitysearch_2019} and \emph{Hashcat} by Steube et al.\@ \cite{hashcat_2020}.
 
 \subsubsection*{Transaction Fees and Burnt Coins}
@@ -609,7 +609,7 @@ Approximately, a non-dust value is larger than the transaction fees required for
 Specifically, the value depends on the output's script size $l$ and is defined as $(\SI{157}{\byte} + l)\cdot 3\,\text{sat}\,\si{\per\byte}$.
 
 While under the conditions of the intended inclusion attack, the attacker has control of the private keys corresponding to the spent non-dust amounts, nevertheless, these coins are effectively non-recoverable and hence burnt: in order for the recovery to be economically beneficial, transaction fees required for the recovery need to be lower than the non-dust amount recovered.
-We can assume that at least one signature is present in each unlocking script (as otherwise the locking scripts were not secured), hence the unlocking scripts have each length at least $\SI{71}{\byte}$. Combined with the fact that the smallest output script has length $\SI{23}{\byte}$ (P2SH type), we obtain that transaction fee for the recovery transaction needs to be $\num{<5.2}$ sat per byte, as otherwise fees exceed the funds recovered.
+We tacitly assume that at least one signature is present in each unlocking script (as otherwise the locking scripts were not secured), hence the unlocking scripts have each length at least $\SI{71}{\byte}$. Combined with the fact that the smallest output script has length $\SI{23}{\byte}$ (P2SH type), we obtain that transaction fee for the recovery transaction needs to be $\num{<5.2}$ sat per byte, as otherwise fees exceed the funds recovered.
 
 Under these constraints, the recovery transaction competes with many transactions having larger transaction fee, and conclusively, inclusion into a mined block is extremely unlikely.
 (Observe that for P2MS-spending transactions, fee per sigop cost – instead of size – determines position in the mempool. Under these conditions, an economic recovery transaction competes with even more transactions, having fee $\num{>2}$ sat per byte.)
@@ -675,7 +675,7 @@ While non-GPU hardware has the potential to be more energy-efficient, either the
 Both the P2PKH and the P2SH method perform the same hash operations, only the former has to additionally perform an elliptic-curve addition.
 Comparing the two methods, we can already observe that the digest calculation in the P2PKH method significantly contributes to total computation time, next to the elliptic-curve arithmetic.
 
-Specialized software for cracking ECDSA keypairs does not appear to exist, hence we cannot estimate parameter $c$ in the same manner.
+Nevertheless, specialized software for cracking ECDSA keypairs does not appear to exist, hence we cannot estimate parameter $c$ in the same manner.
 We therefore omit a precise cost estimation of the P2PK/P2MS method, and use the cost parameter $c$ of the P2PKH method as upper bound.
 
 \section{Comparison with State-of-the-Art Methods}\label{sec:comparison}
@@ -721,7 +721,7 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and use the
 This section compares the impact of the proposed inclusion method with the current situation, having no countermeasures.
 To begin with, we choose the following rough but sensible estimates for computation cost parameter $c$ for methods P2MS, P2PKH, P2SH, based on our observations from previous section.
 We estimate $c_\text{ms}=c_\text{pkh}=c_\text{p2pkh}=\num{4.50e-13}$ USD, $c_\text{sh} = \num{3.00e-15}$ USD.
-Also stated in previous section, transaction cost parameter $f$ directly follows from Bitcoin exchange rate and mining fees, and is displayed in Table \ref{table:txtypes-parameters}.
+Also stated in previous section, publication cost parameter $f$ directly follows from Bitcoin exchange rate and mining fees, and is displayed in Table \ref{table:txtypes-parameters}.
 
 From the results of Sward et al.~\cite[cf.~Table 3]{sward_data_2018}, we can infer that the best present method of including arbitrary data using fake addresses exploits fake public keys (in their extended 65 byte representation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures (P2FMS).
 Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (Eq.~\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\byte}$, and computing $f$ identically to previous procedure (see also Table \ref{table:txtypes-parameters}).
@@ -843,7 +843,7 @@ this trend is independent of all other parameters.
 Therefore, we continue our analysis by looking at the cost of an inclusion \emph{relative} to payload size, while additionally fixing $N=\SI{10}{\kilo\byte}$.
 
 In order to derive parameter $f$ from bitcoin exchange rate $p$, we fix the P2MS method and network transaction fees of 20 sat per byte.
-This is motivated by the fact that 20 sat per byte can be considered a lower bound on the network's transaction cost, and assuming this value, P2MS method is the cheapest one.
+This is motivated by the fact that 20 sat per byte can be considered a lower bound on the network's transaction fee, and assuming this value, P2MS method is the cheapest one.
 Accordingly, the final results of the following calculation can be interpreted as a reasonable lower bound.
 
 As was already performed in Section \ref{sec:parameters}, we can define parameter $f$ in units of sat, and multiply with $p$ to obtain parameter $f$ in terms of USD.
