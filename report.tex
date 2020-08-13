@@ -481,8 +481,6 @@ This leads to a mapping $y_i \mapsto x_i$ for all $1\leq i\leq p$.
 The implementation is trivial for the P2SH method: let $s$ be an injective function transferring a nonce $m\in\mathbb{N}$ into a valid redeem script.
 We start off with a random nonce $m$, and test $H(s(m))$, increment $m$, test again, and so forth.
 Having found $m$ with prefix of $H(s(m))$ matching one fragment $x_i$ in the tree, we can assign that fragment the private key $s(m)\eqqcolon x_i$.
-Observe that, in order to circumvent this specific countermeasure, $s(\cdot)$ must not necessarily map to a syntactically \emph{valid} redeem script, but % TODO
-%Nevertheless, it is beneficial to let $s(\cdot)$ implement a redeem script testing authenticity (e.g.\@ check against a public key) to prevent the payload-holding outputs to be spent.
 
 In the case of the P2PK/P2MS method, this translates to testing products $m\cdot G$, $(m{+}1)\cdot G$, $(m{+}2)\cdot G,\dots$ from random starting nonce $m$.
 Using the axioms of the group formed by the elliptic curve, we can avoid costly elliptic curve multiplications: starting with random nonce $m$, we cache public key $P\coloneqq m\cdot G$.
@@ -499,6 +497,7 @@ The precise value is explained in Section \ref{sec:parameters}.
 
 If the size of the transaction exceeds a defined limit, we add an output referenced by the next transaction as funding input, which contains the remaining public keys. This recursive procedure generates a chain of transactions, as depicted in Figure \ref{fig:tx-construction}.
 This also ensures that the network limit of \SI{100}{\kilo\byte} per transaction is followed.
+(In the case of P2MS transactions, we have to additionally ensure that the maximum sigop cost per transaction is adhered.)
 A terminal Null Data output allows embedding of metadata (such as method used, total payload length, prefix length), facilitating reconstruction of the payload.
 Since we have chained the transactions using funding inputs, the transaction identifier of the last transaction can serve as locator for the data in the blockchain.
 It is recommended to use P2PK(H) scripts as funding inputs, since the signatures in the respective unlocking scripts parts effectively prevent modifications to the transaction, for example an unwanted reordering of the transaction outputs.
@@ -590,15 +589,16 @@ For this, we estimate the parameter indirectly using hashrates reported by users
         \textbf{Type} & \textbf{size} & \textbf{length} & {\textbf{per tx}} &  {\textbf{in BTC}} & {\textbf{$f$ in sat}} & {\textbf{$f$ in USD}}\cr
         \midrule
         P2PK         & 35 B & 32 B& 2267 &    0.03305332 &1458.02 & 14.6e-2\cr
-        1-of-3 P2MS  & 105 B & 32 B& 2625 &   0.02687330 &1023.74 & 10.2e-2\cr
         P2PKH        & 25 B& 20 B & 2934 &    0.03601664 &1227.56 & 12.3e-2\cr
         P2SH         & 23 B& 20 B & 3117 &    0.03682640 &1181.47 & 11.8e-2\cr
-        1-of-3 P2FMS & 201 B & 65 B& 1425 &   0.02509730 &1761.21 & 17.6e-2\cr
+        \midrule
+        1-of-3 P2MS  & 105 B & 32 B& 600 &   0.00617780 &1029.63 & 10.3e-2\cr
+        1-of-3 P2FMS & 201 B & 65 B& 600 &   0.01059380 &1765.63 & 17.7e-2\cr
         \bottomrule
     \end{tabular}
     \caption[Overview of the different transaction types]{Overview of the different transaction types.
         Second column denotes the scripts size for a transaction output, holding an address (resp.\@ three addresses in the case of multisig), third column the maximum payload length per address.
-        Fourth column gives how many addresses can be gathered in a single transaction (not exceeding the size limit of \protect\SI{100}{\kilo\byte}), fifth column the total cost for submitting this transaction, that is with smallest non-dust amount (depending on transaction type) per output plus transaction fees of 20 sat per byte.
+        Fourth column gives how many addresses can be gathered in a single transaction (not exceeding network limits), fifth column the total cost for submitting this transaction, that is with smallest non-dust amount (depending on transaction type) per output plus transaction fees of 20 sat per byte.
         Value $f$ is obtained by dividing total cost by number of addresses, further assuming current exchange rate of \num{10000} USD per BTC.}
     \label{table:txtypes-parameters}
 \end{table}
@@ -615,7 +615,8 @@ Under these constraints, the recovery transaction competes with many transaction
 (Observe that for P2MS-spending transactions, fee per sigop cost – instead of size – determines position in the mempool. Under these conditions, an economic recovery transaction competes with even more transactions, having fee $\num{>2}$ sat per byte.)
 
 
-Now, in order to obtain parameter $f$, we construct the largest possible transaction  using a single P2PK coinbase input to fund the outputs with non-dust burns, and adding outputs until reaching network's size limit of $\SI{100}{\kilo\byte}$.
+Now, in order to obtain parameter $f$, we construct the largest possible transaction  using a single P2PK coinbase input to fund the outputs with non-dust burns, and adding outputs until reaching network's size limit of $\SI{100}{\kilo\byte}$, or, in the case of P2MS, until the sigop cost limit per transaction is reached (implying no more than 200 \texttt{CHECKMULTISIG} operations).
+
 Multiplying with miner's transaction fees, and adding the smallest respective non-dust burn amount to each output yields the value for parameter $f$.
 Table \ref{table:txtypes-parameters} gives this parameter in absolute values for all three methods, using transaction fees of 20 sat per byte (identical to \cite{sward_data_2018}), and Bitcoin exchange rate at point of writing (\num{10000} USD per bitcoin).
 Note that the P2MS strategy, arranging pubkeys in 1-of-3 multisig outputs, is currently the least expensive one with respect to $f$.
@@ -714,7 +715,7 @@ We therefore omit a precise cost estimation of the P2PK/P2MS method, and use the
             \addlegendentry{fake multisig}
         \end{semilogyaxis}
     \end{tikzpicture}
-    \caption[Log-linear plot of expected total cost]{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see Equation \ref{eq:totalcost}) with $N=\protect\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{4.50e-15}$ USD, $f=\num{12.3e-2}$ USD), P2MS ($c=\num{4.50e-15}$ USD, $f=\num{10.2e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{11.8e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs (P2FMS).}
+    \caption[Log-linear plot of expected total cost]{Log-linear plot of expected total cost $\mathrm{E}[C]$ (see Equation \ref{eq:totalcost}) with $N=\protect\SI{10}{\kilo\byte}$ for inclusion methods P2PKH ($c=\num{4.50e-15}$ USD, $f=\num{12.3e-2}$ USD), P2MS ($c=\num{4.50e-15}$ USD, $f=\num{10.3e-2}$ USD), P2SH ($c=\num{3.0e-15}$ USD, $f=\num{11.8e-2}$ USD). For comparison, dotted line indicates constant efficiency achievable using fake addresses in multisig outputs (P2FMS).}
     \label{fig:plot}
 \end{figure}
 
@@ -725,7 +726,7 @@ Also stated in previous section, publication cost parameter $f$ directly follows
 
 From the results of Sward et al.~\cite[cf.~Table 3]{sward_data_2018}, we can infer that the best present method of including arbitrary data using fake addresses exploits fake public keys (in their extended 65 byte representation) arranged in 1-of-3 multisig outputs, not being inhibited by any countermeasure requiring proof signatures (P2FMS).
 Relative cost of inclusion using this state-of-the-art method can easily be estimated using same formula (Eq.~\ref{eq:totalcost}), assigning $c=0$, maximum prefix size $n=\SI{65}{\byte}$, and computing $f$ identically to previous procedure (see also Table \ref{table:txtypes-parameters}).
-This gives us a constant cost efficiency of \num{2.71} USD$\,\si{\per\kilo\byte}$ as benchmark.
+This gives us a constant cost efficiency of \num{2.72} USD$\,\si{\per\kilo\byte}$ as benchmark.
 
 Figure \ref{fig:plot} plots the expected cost per byte payload, with respect to prefix length $n$, using $N=\SI{10}{\kilo\byte}$ and previously stated parameters, for each method.
 As comparison, the constant relative cost of the state-of-the-art method is highlighted by the dashed horizontal line.
@@ -734,7 +735,7 @@ Observe that, for each method, the local minimum of the respective cost function
 Furthermore, the plot confirms the trade-off nature of the problem: left of the minimum point, cost increases proportional due to more addresses required; cost right of the minimum point is dominated by the exponentially increasing brute force computation cost.
 
 We give minimum cost per kilobyte payload in Table \ref{table:optimalcost}, and obtain following result:
-defending the Bitcoin network against unwanted data inclusion using proof-of-ownership signatures could allow for an 6-fold increase of inclusion cost, at current situation.
+defending the Bitcoin network against unwanted data inclusion using proof-of-ownership signatures could allow for an \num{6.6}-fold increase of inclusion cost, at current situation.
 
 It needs to be highlighted that optimal cost efficiency can only be obtained using significant computation time.
 For example, using the fastest GPU for the P2SH inclusion method from Table \ref{table:cost}, performing the brute-force algorithm with \SI{10}{\kilo\byte} payload already requires more than 169 hours of computation.
@@ -749,10 +750,10 @@ Nevertheless, real-time inclusion using non-specialized hardware seems out of re
         & {\textbf{\llap{opt.\@ prefix}}} & {\textbf{exp.\@ cost in}} & \textbf{{rel.\@ increase}}\cr
         & {\textbf{length}} & {\textbf{USD per kB}} & {\textbf{w.r.t.\@ P2FMS}}\cr
         \midrule
-        P2PK  & 48 & 35.3 & 9.34\cr
-        P2MS  & 47 & 17.9 & 6.61\cr
-        P2PKH & 47 & 21.4 & 7.90\cr
-        P2SH  & 48 & 20.4 & 7.52\cr
+        P2PK  & 48 & 25.3 & 9.32\cr
+        P2MS  & 47 & 18.0 & 6.64\cr
+        P2PKH & 47 & 21.4 & 7.88\cr
+        P2SH  & 48 & 20.4 & 7.50\cr
         \bottomrule
     \end{tabular}
     \caption[Minimum expected cost]{Minimum point $n$ and minimum value $\mathrm{E[C]}$ from plot in Figure \ref{fig:plot}. Rightmost column gives the relative increase with respect to the constant efficiency achievable using fake addresses in multisig outputs.}
@@ -857,7 +858,7 @@ In order to state the effect of bitcoin price and computation cost quantitativel
 We continue by presenting a bivariate log-log regression model to explaining the dependent data points from the independent variables, that is,
 \begin{equation} \log_{10} \frac{C_\text{p2ms}(p, c)}{\text{USD}\,\si{\per\byte}} = \alpha + \beta \log_{10} \frac{p}{\text{USD}} + \gamma \log_{10} \frac{c}{\text{USD}} + \epsilon_i, \label{eq:regressionmodel}\end{equation}
 with unknown parameters $\alpha$, $\beta$, $\gamma$, and error terms $\epsilon_i$.
-Usual least-squares-error method provides $\alpha \approx \num{-65.292}$, $\beta \approx\num{0.97498}$, $\gamma \approx\num{.002495}$.
+Usual least-squares-error method provides $\alpha \approx \num{-5.290}$, $\beta \approx\num{0.97498}$, $\gamma \approx\num{.002495}$.
 
 
 It is explicitly to be remarked that this model does not precisely explain the data; this becomes clear when considering the visible patterns in the residual graph of this regression.
@@ -869,10 +870,10 @@ First, as we expected, relative inclusion cost $C_\mathrm{p2ms}(p,c)$ is almost 
 Since sub-linear, we expect that $C_\mathrm{p2ms}(p,c)$ continues to converge towards $C_\mathrm{fake}(p)$, which grows linear with respect to $p$.
 Nevertheless, this trend appears to be minor; a 100-fold bitcoin price increase lowers relative inclusion cost by no more than \SI{11}{\percent}.
 
-Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10$, for example, would reduce relative inclusion cost by \SI{5.59}{\percent}. (Moore's law would estimate such cost decrease of factor $10$ in a time span of 7 years.)
+Second, computation cost $c$ has – independent of bitcoin price $p$ – only slim effects on inclusion cost: lowering computation cost by factor $10$, for example, would reduce relative inclusion cost by \SI{5.6}{\percent}. (Moore's law would estimate such cost decrease of factor $10$ in a time span of 7 years.)
 
 We conclude: even though effectiveness of the proposed countermeasure decreases both with increasing bitcoin price and decreasing computational cost, effectiveness remains stable even for extreme values.
-For our established bounds of parameters, this means $\num{4.3} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{7.3}$.
+For our established bounds of parameters, this means $\num{4.3} \leq C_\mathrm{p2ms}(p,c) / C_\mathrm{fake}(p) \leq \num{7.4}$.
 
 
 \chapter{Conclusion}\label{chap:conclusion}
@@ -894,7 +895,7 @@ Furthermore, the construction generates addresses in such a way that the straigh
 Section \ref{chap:evaluation} gives a stochastic model that estimates the cost required by the brute-force circumvention, using the outlined implementation, assuming the presence of the considered countermeasure.
 Then, required parameters (cost associated with transaction publication resp.\@ computation cost) are determined, whereas computation cost is estimated using publicly available data on hardware performance.
 At the current date, the proposed countermeasure would increase the cost of arbitrary data inclusion by factor \num{6.6}.
-Variations in these parameters show that this factor is in the range $[\num{4.3}, \num{7.3}]$ for realistic values, considering the best-performing P2MS method.
+Variations in these parameters show that this factor is in the range $[\num{4.3}, \num{7.4}]$ for realistic values, considering the best-performing P2MS method.
 Furthermore, our regression model implies that inclusion cost circumventing the countermeasure is dominated by Bitcoin price in a near-linear relationship.
 Impact on computing cost $c$ however is heavily sublinear, with a growth behavior proportional to $c^\gamma$, $\gamma \ll 1$ (cf.\@ Eq.\@ \ref{eq:regressionmodel}), implying that improvements in hardware lead to minor effects on the effectiveness of the countermeasure.
 
